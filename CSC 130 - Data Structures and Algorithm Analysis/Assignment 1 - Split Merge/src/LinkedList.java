@@ -11,4 +11,16 @@ public class LinkedList
 
         head = new_node;
     }
+
+    void traverse()
+    {
+        Node<String> temp = head;
+
+        while ( temp != null )
+        {
+            System.out.println(temp.get_value());
+            temp = temp.get_next();
+        }
+    }
+
 }
