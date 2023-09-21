@@ -1,3 +1,7 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 public class LinkedList
 {
     private Node<String> head;
@@ -23,4 +27,17 @@ public class LinkedList
         }
     }
 
+    void read_file(String path)
+            throws FileNotFoundException
+    {
+        File file  = new File(path);
+        Scanner input = new Scanner(file);
+
+        while ( input.hasNext() )
+        {
+            this.add_to_front( input.next() );
+        }
+
+        input.close();
+    }
 }
