@@ -16,14 +16,30 @@ public class LinkedList
         head = new_node;
     }
 
+    void add_to_back(String value)
+    {
+        Node<String> new_node = new Node<>(value);
+
+        if ( head == null )
+        {
+            head = new_node;
+            return;
+        }
+
+        Node<String> current = head;
+        while ( current.get_next() != null )
+            current = current.get_next();
+        current.set_next( new_node );
+    }
+
     void traverse()
     {
-        Node<String> temp = head;
+        Node<String> current = head;
 
-        while ( temp != null )
+        while ( current != null )
         {
-            System.out.println(temp.get_value());
-            temp = temp.get_next();
+            System.out.println( current.get_value() );
+            current = current.get_next();
         }
     }
 
@@ -35,7 +51,7 @@ public class LinkedList
 
         while ( input.hasNext() )
         {
-            this.add_to_front( input.next() );
+            this.add_to_back( input.next() );
         }
 
         input.close();
