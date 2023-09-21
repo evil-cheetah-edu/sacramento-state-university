@@ -6,6 +6,11 @@ public class LinkedList
 {
     private Node<String> head;
 
+    Node<String> get_head()
+    {
+        return head;
+    }
+
     void add_to_front(String value)
     {
         Node<String> new_node = new Node<>();
@@ -55,5 +60,51 @@ public class LinkedList
         }
 
         input.close();
+    }
+
+    LinkedList split()
+    {
+        Node<String> middle_node = get_pre_last_middle_node();
+        Node<String> current     = middle_node.get_next();
+
+        LinkedList list = new LinkedList();
+
+        while ( current != null)
+        {
+            list.add_to_back( current.get_value() );
+            current = current.get_next();
+        }
+
+        middle_node.set_next( null );
+
+        return list;
+    }
+
+    void merge(LinkedList list)
+    {
+        Node<String> current = list.get_head();
+
+        while ( current != null )
+        {
+            add_to_back( current.get_value() );
+            current = current.get_next();
+        }
+    }
+
+    private Node<String> get_pre_last_middle_node()
+    {
+        Node<String> slow = head,
+                     fast = head;
+
+        while (
+                fast.get_next()            != null &&
+                fast.get_next().get_next() != null
+        )
+        {
+            slow = slow.get_next();
+            fast = fast.get_next().get_next();
+        }
+
+        return slow;
     }
 }
