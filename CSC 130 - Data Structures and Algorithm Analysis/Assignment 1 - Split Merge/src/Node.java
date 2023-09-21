@@ -1,7 +1,13 @@
 public class Node<T>
 {
-    private T    value;
-    private Node next;
+    private T       value;
+    private Node<T> next;
+
+
+    Node ()
+    {
+        this.value = null;
+    }
 
     Node(T value)
     {
@@ -18,7 +24,7 @@ public class Node<T>
         this.value = value;
     }
 
-    Node get_next()
+    Node<T> get_next()
     {
         return next;
     }
