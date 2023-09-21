@@ -1,18 +1,33 @@
+import java.io.FileNotFoundException;
+
 public class Main
 {
     public static void main(String[] args)
     {
-        Node<String> node1 = new Node<>("Hello");
-        Node<String> node2 = new Node<>("World");
+        LinkedList list = new LinkedList();
 
-        node1.set_next(node2);
-
-        Node<String> temp = node1;
-
-        while (temp != null)
+        try
         {
-            System.out.println(temp.get_value());
-            temp = temp.get_next();
+            list.read_file("input.txt");
         }
+        catch (FileNotFoundException e)
+        {
+            System.out.println("File not found!");
+            throw new RuntimeException(e);
+        }
+
+        LinkedList list2 = list.split();
+
+        System.out.println("List 1:");
+        list.traverse();
+
+        System.out.println();
+        System.out.println("List 2:");
+        list2.traverse();
+
+        list.merge(list2);
+        System.out.println();
+        System.out.println("Merged List:");
+        list.traverse();
     }
 }
