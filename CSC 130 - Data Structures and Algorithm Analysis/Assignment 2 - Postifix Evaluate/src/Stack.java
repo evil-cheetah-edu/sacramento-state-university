@@ -15,7 +15,7 @@ public class Stack<T>
 
     T pop()
     {
-        if ( is_empty_stack() )
+        if ( is_stack_empty() )
             throw new RuntimeException( ExceptionMessage.EMPTY_STACK_EXCEPTION_MESSAGE );
 
         Node<T> temp = head;
@@ -29,13 +29,13 @@ public class Stack<T>
 
     T peek()
     {
-        if ( is_empty_stack() )
+        if ( is_stack_empty() )
             throw new RuntimeException( ExceptionMessage.EMPTY_STACK_EXCEPTION_MESSAGE );
 
         return head.get_value();
     }
 
-    private boolean is_empty_stack()
+    private boolean is_stack_empty()
     {
         return (head == null);
     }
