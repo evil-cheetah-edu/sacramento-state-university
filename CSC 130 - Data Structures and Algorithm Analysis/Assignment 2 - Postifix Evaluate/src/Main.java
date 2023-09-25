@@ -2,19 +2,17 @@ public class Main
 {
     public static void main(String[] args)
     {
-        Stack<String> stack = new Stack<>();
+        Queue<String> queue = new Queue<>();
 
-        System.out.println(stack.peek());
+        queue.enqueue("Hello!");
+        queue.enqueue("World!");
+        queue.enqueue("I am in Queue!");
 
-        stack.push("Hello!");
-        stack.push("World!");
-        stack.push("I am in Stack!");
+        System.out.println(queue.peek());
+        System.out.println();
 
-        System.out.println(stack.peek());
-        System.out.println(stack.pop());
-        System.out.println(stack.pop());
-
-        // # Successfully Throws
-        // System.out.println(stack.pop());
+        System.out.println(queue.dequeue());
+        System.out.println(queue.dequeue());
+        System.out.println(queue.dequeue());
     }
 }
