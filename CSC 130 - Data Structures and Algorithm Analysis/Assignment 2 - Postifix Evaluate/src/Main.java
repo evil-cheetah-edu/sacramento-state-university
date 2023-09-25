@@ -4,6 +4,8 @@ public class Main
     {
         Stack<String> stack = new Stack<>();
 
+        System.out.println(stack.peek());
+
         stack.push("Hello!");
         stack.push("World!");
         stack.push("I am in Stack!");
