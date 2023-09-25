@@ -11,6 +11,11 @@ public class LinkedList
         return head;
     }
 
+    void set_head(Node<String> head)
+    {
+        this.head = head;
+    }
+
     void add_to_front(String value)
     {
         Node<String> new_node = new Node<>();
