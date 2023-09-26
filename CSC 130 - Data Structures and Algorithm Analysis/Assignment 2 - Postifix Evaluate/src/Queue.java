@@ -47,6 +47,21 @@ public class Queue<T>
         return front.get_value();
     }
 
+    String to_string()
+    {
+        String result = "";
+
+        Node<T> current = front;
+
+        while ( current != null )
+        {
+            result  += current.get_value();
+            current  = current.get_next();
+        }
+
+        return result;
+    }
+
 
     private boolean is_queue_empty()
     {
