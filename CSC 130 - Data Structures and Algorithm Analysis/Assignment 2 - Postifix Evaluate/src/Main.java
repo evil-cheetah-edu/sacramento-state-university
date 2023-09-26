@@ -5,8 +5,11 @@ public class Main
     public static void main(String[] args)
     {
         Scanner scanner = new Scanner(System.in);
+
         System.out.println("Enter an expression:");
-        String input = scanner.next();
+
+        String input   = scanner.next();
+        String postfix = Postfix.to_postfix(input);
 
         System.out.println(
                 "Original Expression: " + input
@@ -15,7 +18,7 @@ public class Main
                 "Postfix Notation:    " + Postfix.to_postfix(input)
         );
         System.out.println(
-                "Result:              " + Integer.toString(Postfix.evaluate((input)))
+                "Result:              " + Integer.toString(Postfix.evaluate((postfix)))
         );
 
         scanner.close();
