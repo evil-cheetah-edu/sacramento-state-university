@@ -35,6 +35,11 @@ public class Stack<T>
         return head.get_value();
     }
 
+    boolean is_empty()
+    {
+        return ( head == null );
+    }
+
     private boolean is_stack_empty()
     {
         return (head == null);
