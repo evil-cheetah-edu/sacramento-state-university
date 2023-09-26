@@ -1,11 +1,10 @@
 public class Postfix
 {
-    static int evaluate(String expression)
+    static int evaluate(String postfix_expression)
     {
-        Stack<Integer> stack = new Stack<>();
-        String postfix = to_postfix(expression);
+        Stack<Integer>   stack  = new Stack<>();
 
-        for (char c : postfix.toCharArray())
+        for (char c : postfix_expression.toCharArray())
         {
             if (Character.isDigit(c))
             {
@@ -35,14 +34,14 @@ public class Postfix
 
     static String to_postfix(String expression)
     {
-        Stack<Character> stack = new Stack<>();
-        String result = "";
+        Stack<Character> stack  = new Stack<>();
+        Queue<Character> result = new Queue<>();
 
         for (char c : expression.toCharArray())
         {
             if ( is_operand(c) )
             {
-                result += c;
+                result.enqueue( c );
                 continue;
             }
 
@@ -54,7 +53,7 @@ public class Postfix
                 stack.push(c);
 
             else if (c == ')')
-                result += stack.pop();
+                result.enqueue( stack.pop() );
 
             else if (precedence(c) > precedence(stack.peek()))
                 stack.push(c);
@@ -63,7 +62,7 @@ public class Postfix
             {
                 while (!stack.is_empty() && precedence(c) <= precedence(stack.peek()))
                     if (!(stack.peek() == '(' || stack.peek() == ')'))
-                        result += stack.pop();
+                        result.enqueue( stack.pop() );
 
                 stack.push(c);
             }
@@ -72,12 +71,14 @@ public class Postfix
         while (!stack.is_empty())
         {
             if (!(stack.peek() == '(' || stack.peek() == ')'))
-                result += stack.peek();
+            {
+                result.enqueue( stack.peek() );
+            }
 
             stack.pop();
         }
 
-        return result;
+        return result.to_string();
     }
 
     private static boolean is_operand(char c)
