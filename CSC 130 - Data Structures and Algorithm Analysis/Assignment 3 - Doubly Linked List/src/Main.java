@@ -1,26 +1,42 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
+
 public class Main
 {
     public static void main(String[] args)
     {
-        Node<String> node1 = new Node<>("Adam");
-        Node<String> node2 = new Node<>("James");
+        LinkedList list = new LinkedList();
+        Scanner scanner;
 
-        node1.set_next(node2);
-        node2.set_prev(node1);
+        try
+        {
+            File    file = new File("input.txt");
+                 scanner = new Scanner(file);
+        }
+        catch (FileNotFoundException e)
+        {
+            System.out.println("Specified file was not found...");
+            throw new RuntimeException(ExceptionMessage.FILE_NOT_FOUND);
+        }
 
-        System.out.println("Node 1:");
-        System.out.println("\tAddress: " + node1);
-        System.out.println("\tPrev:    " + node1.get_prev());
-        System.out.println("\tValue:   " + node1.get_value());
-        System.out.println("\tNext:    " + node1.get_next());
+        while (scanner.hasNext())
+        {
+            String next = scanner.next();
 
-        System.out.println();
+            if ( next.equalsIgnoreCase("Delete") )
+            {
+                list.remove(scanner.next());
+                continue;
+            }
+            list.insert(next);
+        }
 
-        System.out.println("Node 2:");
-        System.out.println("\tAddress: " + node2);
-        System.out.println("\tPrev:    " + node2.get_prev());
-        System.out.println("\tValue:   " + node2.get_value());
-        System.out.println("\tNext:    " + node2.get_next());
+        System.out.println("Ascending Order:");
+        list.traverse();
 
+        System.out.println("\nDescending Order...");
+        list.traverse(OrderingType.DESCENDING);
     }
 }
