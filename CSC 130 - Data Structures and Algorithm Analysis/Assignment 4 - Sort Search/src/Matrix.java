@@ -34,6 +34,16 @@ public class Matrix
         }
     }
 
+    void traverse_column(int column_index)
+    {
+        int max_length = this.max_length();
+
+        for( int[] row : matrix )
+            System.out.println(
+                    String.format('%' + Integer.toString(max_length) + "d ", row[column_index])
+            );
+    }
+
     int[][] get_matrix()
     {
         int[][] matrix_copy = new int[this.matrix.length][];
