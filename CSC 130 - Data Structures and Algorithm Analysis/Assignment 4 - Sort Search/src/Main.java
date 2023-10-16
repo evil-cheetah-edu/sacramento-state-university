@@ -23,5 +23,12 @@ public class Main
         matrix.traverse();
 
         System.out.println();
+        matrix.set_matrix(Constants.BACK_UP_MATRIX);
+
+        System.out.println("Matrix After Insertion Sort:");
+        matrix = Sorting.insertion_sort(matrix, 4, Comparator.naturalOrder());
+        matrix.traverse();
+
+        System.out.println();
     }
 }

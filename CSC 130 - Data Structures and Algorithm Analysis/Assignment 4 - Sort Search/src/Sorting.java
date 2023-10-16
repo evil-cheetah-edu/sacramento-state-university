@@ -47,4 +47,24 @@ public class Sorting
 
         return new Matrix(matrix);
     }
+
+
+    static Matrix insertion_sort(Matrix m, int row_index, Comparator<Integer> comparator)
+    {
+        int[][] matrix = m.get_matrix();
+
+        for ( int i = 1; i < matrix[row_index].length; ++i )
+            for (
+                int j = i;
+                (j > 0) && (comparator.compare( matrix[row_index][j - 1], matrix[row_index][j] ) > 0);
+                --j
+            )
+            {
+                int temporary            = matrix[row_index][j];
+                matrix[row_index][  j  ] = matrix[row_index][j - 1];
+                matrix[row_index][j - 1] = temporary;
+            }
+
+        return new Matrix(matrix);
+    }
 }
