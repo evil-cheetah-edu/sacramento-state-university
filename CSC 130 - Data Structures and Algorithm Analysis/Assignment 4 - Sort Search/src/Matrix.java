@@ -15,10 +15,7 @@ public class Matrix
 
     Matrix(int[][] matrix)
     {
-        this.matrix = new int[matrix.length][];
-
-        for( int i = 0; i < matrix.length; ++i )
-            this.matrix[i] = matrix[i].clone();
+        this.set_matrix(matrix);
     }
 
 
@@ -35,6 +32,24 @@ public class Matrix
 
             System.out.println();
         }
+    }
+
+    int[][] get_matrix()
+    {
+        int[][] matrix_copy = new int[this.matrix.length][];
+
+        for ( int i = 0; i < this.matrix.length; ++i )
+            matrix_copy[i] = this.matrix[i].clone();
+        
+        return this.matrix;
+    }
+
+    void set_matrix(int[][] matrix)
+    {
+        this.matrix = new int[matrix.length][];
+
+        for( int i = 0; i < matrix.length; ++i )
+            this.matrix[i] = matrix[i].clone();
     }
 
 
