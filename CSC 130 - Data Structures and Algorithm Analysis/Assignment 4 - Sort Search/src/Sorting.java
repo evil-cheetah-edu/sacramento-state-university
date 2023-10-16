@@ -67,4 +67,27 @@ public class Sorting
 
         return new Matrix(matrix);
     }
+
+    static Matrix shell_sort(Matrix m, int column_index, Comparator<Integer> comparator)
+    {
+        int[][] matrix = m.get_matrix();
+
+        for( int gap = matrix.length / 2; gap >= 1; gap /= 2)
+            for( int i = gap; i < matrix.length; ++i )
+                for(
+                    int j = i;
+                    (
+                        (j >= gap) &&
+                        (comparator.compare(matrix[j - gap][column_index], matrix[j][column_index]) > 0)
+                    );
+                    j -= gap
+                )
+                {
+                    int temporary                 = matrix[j - gap][column_index];
+                    matrix[j - gap][column_index] = matrix[   j   ][column_index];
+                    matrix[   j   ][column_index] = temporary;
+                }
+
+        return new Matrix(matrix);
+    }
 }
