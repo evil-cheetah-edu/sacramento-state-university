@@ -14,5 +14,14 @@ public class Main
         System.out.println("Matrix After Bubble Sort:");
         matrix = Sorting.bubble_sort(matrix, 0, Comparator.naturalOrder());
         matrix.traverse();
+
+        System.out.println();
+        matrix.set_matrix(Constants.BACK_UP_MATRIX);
+
+        System.out.println("Matrix After Selection Sort:");
+        matrix = Sorting.selection_sort(matrix, 1, Comparator.reverseOrder());
+        matrix.traverse();
+
+        System.out.println();
     }
 }
