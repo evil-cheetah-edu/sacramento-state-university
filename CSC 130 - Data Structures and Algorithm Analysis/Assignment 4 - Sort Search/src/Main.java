@@ -1,4 +1,5 @@
 import java.util.Comparator;
+import java.util.Scanner;
 
 public class Main
 {
@@ -40,5 +41,16 @@ public class Main
         System.out.println("Matrix After Shell Sort:");
         matrix = Sorting.shell_sort(matrix, 2, Comparator.naturalOrder());
         matrix.traverse();
+
+        System.out.println();
+        matrix.set_matrix(Constants.BACK_UP_MATRIX);
+
+
+        /// Binary Search on Insertion Sort Matrix
+        System.out.println("Binary Search on Matrix After Insertion Sort:");
+        matrix           = Sorting.insertion_sort(matrix, 4, Comparator.naturalOrder());
+        Scanner input    = new Scanner(System.in);
+        int column_index = Searching.binary_search(matrix, 4, input.nextInt());
+        matrix.traverse_column(column_index);
     }
 }
