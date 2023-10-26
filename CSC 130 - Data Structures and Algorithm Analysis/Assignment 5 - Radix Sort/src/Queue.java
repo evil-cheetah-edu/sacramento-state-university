@@ -11,7 +11,7 @@ public class Queue<T>
         new_node.set_value(value);
         new_node.set_next(null);
 
-        if ( rear == null )
+        if ( front == null )
         {
             front = rear = new_node;
             return;
@@ -23,7 +23,7 @@ public class Queue<T>
 
     T dequeue()
     {
-        if ( is_queue_empty() )
+        if ( is_empty() )
         {
             rear = null;
             throw new RuntimeException(ExceptionMessage.EMPTY_QUEUE_EXCEPTION_MESSAGE);
@@ -38,7 +38,7 @@ public class Queue<T>
 
     T peek()
     {
-        if ( is_queue_empty() )
+        if ( is_empty() )
         {
             rear = null;
             throw new RuntimeException(ExceptionMessage.EMPTY_QUEUE_EXCEPTION_MESSAGE);
@@ -55,7 +55,7 @@ public class Queue<T>
 
         while ( current != null )
         {
-            result  += current.get_value();
+            result  += current.get_value() + " ";
             current  = current.get_next();
         }
 
@@ -63,7 +63,7 @@ public class Queue<T>
     }
 
 
-    private boolean is_queue_empty()
+    boolean is_empty()
     {
         return ( front == null );
     }
