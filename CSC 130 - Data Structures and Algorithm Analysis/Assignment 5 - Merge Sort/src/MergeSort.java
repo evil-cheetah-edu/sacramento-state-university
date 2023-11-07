@@ -28,15 +28,15 @@ public class MergeSort
 
         while ( !left.is_empty() && !right.is_empty() )
         {
-            if ( left.get_head_value() > right.get_head_value() )
-            {
-                result.add_to_back(right.get_head_value());
-                right.pop_in_front();
-            }
-            else
+            if ( comparator.compare(left.get_head_value(), right.get_head_value()) < 0 )
             {
                 result.add_to_back(left.get_head_value());
                 left.pop_in_front();
+            }
+            else
+            {
+                result.add_to_back(right.get_head_value());
+                right.pop_in_front();
             }
         }
 
