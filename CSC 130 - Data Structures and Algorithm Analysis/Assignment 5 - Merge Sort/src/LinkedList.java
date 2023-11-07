@@ -1,7 +1,3 @@
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.Scanner;
-
 public class LinkedList<T>
 {
     private Node<T> head;
@@ -16,7 +12,7 @@ public class LinkedList<T>
         this.head = head;
     }
 
-    void add_to_front(String value)
+    void add_to_front(T value)
     {
         Node<T> new_node = new Node<>();
 
@@ -26,7 +22,7 @@ public class LinkedList<T>
         head = new_node;
     }
 
-    void add_to_back(String value)
+    void add_to_back(T value)
     {
         Node<T> new_node = new Node<>(value);
 
@@ -53,26 +49,12 @@ public class LinkedList<T>
         }
     }
 
-    void read_file(String path)
-            throws FileNotFoundException
-    {
-        File file  = new File(path);
-        Scanner input = new Scanner(file);
-
-        while ( input.hasNext() )
-        {
-            this.add_to_back( input.next() );
-        }
-
-        input.close();
-    }
-
-    LinkedList split()
+    LinkedList<T> split()
     {
         Node<T> middle_node = get_pre_last_middle_node();
         Node<T> current     = middle_node.get_next();
 
-        LinkedList list = new LinkedList();
+        LinkedList<T> list = new LinkedList();
 
         while ( current != null)
         {
@@ -103,7 +85,7 @@ public class LinkedList<T>
 
         while (
                 fast.get_next()            != null &&
-                        fast.get_next().get_next() != null
+                fast.get_next().get_next() != null
         )
         {
             slow = slow.get_next();
