@@ -7,6 +7,11 @@ public class LinkedList<T>
         return head;
     }
 
+    T get_head_value()
+    {
+        return head.get_value();
+    }
+
     void set_head(Node<T> head)
     {
         this.head = head;
@@ -38,6 +43,16 @@ public class LinkedList<T>
         current.set_next( new_node );
     }
 
+    void pop_in_front()
+    {
+        if ( head == null )
+            return;
+
+        Node<T> temp = head;
+        head = head.get_next();
+        temp.set_next(null);
+    }
+
     void traverse()
     {
         Node<T> current = head;
@@ -67,8 +82,30 @@ public class LinkedList<T>
         return list;
     }
 
+    int size()
+    {
+        Node<T> current = head;
+
+        int count = 0;
+        while (current != null)
+        {
+            current = current.get_next();
+            ++count;
+        }
+
+        return count;
+    }
+
+    boolean is_empty()
+    {
+        return head != null;
+    }
+
     void merge(LinkedList list)
     {
+        if ( list == null )
+            return;
+
         Node<T> current = list.get_head();
 
         while ( current != null )
