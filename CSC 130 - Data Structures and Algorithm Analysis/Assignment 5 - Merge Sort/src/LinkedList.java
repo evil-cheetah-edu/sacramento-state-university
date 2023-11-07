@@ -98,7 +98,7 @@ public class LinkedList<T>
 
     boolean is_empty()
     {
-        return head != null;
+        return head == null;
     }
 
     void merge(LinkedList list)
