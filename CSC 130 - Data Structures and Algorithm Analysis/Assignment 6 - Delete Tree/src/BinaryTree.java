@@ -2,10 +2,12 @@ public class BinaryTree
 {
     private Node<Integer> root;
 
+
     BinaryTree()
     {
         root = null;
     }
+
 
     Node<Integer> get_root()
     {
@@ -17,10 +19,17 @@ public class BinaryTree
         root = node;
     }
 
+
     void insert(int value)
     {
             root = insert(root, new Node<>(value));
     }
+
+    void delete(int value)
+    {
+        root = delete(root, value);
+    }
+
 
     void traverse(TraversalType type)
     {
@@ -44,8 +53,6 @@ public class BinaryTree
     }
 
 
-
-
     private Node<Integer> insert(Node<Integer> current, Node<Integer> new_node)
     {
         if ( current == null )
@@ -60,6 +67,7 @@ public class BinaryTree
         return current;
     }
 
+
     private void pre_order_traversal(Node<Integer> current)
     {
         if ( current == null)
@@ -69,6 +77,7 @@ public class BinaryTree
         pre_order_traversal(current.get_left());
         pre_order_traversal(current.get_right());
     }
+
 
     private void in_order_traversal(Node<Integer> current)
     {
@@ -80,6 +89,7 @@ public class BinaryTree
         in_order_traversal(current.get_right());
     }
 
+
     private void post_order_traversal(Node<Integer> current)
     {
         if ( current == null )
@@ -88,5 +98,45 @@ public class BinaryTree
         post_order_traversal(current.get_left());
         post_order_traversal(current.get_right());
         System.out.println(Integer.toString( current.get_value() ) + ' ');
+    }
+
+
+    private Node<Integer> delete(Node<Integer> current, int value)
+    {
+        if ( current == null )
+            return null;
+
+        if ( value < current.get_value() )
+            current.set_left( delete(current.get_left(), value) );
+
+        else if ( current.get_value() < value )
+            current.set_right( delete(current.get_right(), value) );
+
+        else
+        {
+            if ( current.get_left() == null || current.get_right() == null )
+                if ( current.get_left() == null )
+                    return current.get_right();
+
+                else
+                    return current.get_left();
+
+            else
+            {
+                current.set_value( this.min( current.get_right() ) );
+                current.set_right( delete(current.get_right(), current.get_value()) );
+            }
+        }
+
+        return current;
+    }
+
+
+    private int min(Node<Integer> current)
+    {
+        if ( current.get_left() == null )
+            return current.get_value();
+
+        return min(current.get_left());
     }
 }
