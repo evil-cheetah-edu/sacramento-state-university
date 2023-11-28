@@ -19,7 +19,7 @@ public class BinaryTree
 
     void insert(int value)
     {
-        root = insert(root, new Node<Integer>(value));
+            root = insert(root, new Node<>(value));
     }
 
     void traverse(TraversalType type)
@@ -52,10 +52,10 @@ public class BinaryTree
             return new_node;
 
         if ( new_node.get_value() < current.get_value() )
-            current.set_left( new_node );
+            current.set_left( insert(current.get_left(), new_node) );
 
         else if ( new_node.get_value() > current.get_value() )
-            current.set_right( new_node );
+            current.set_right( insert(current.get_right(), new_node) );
 
         return current;
     }
@@ -65,7 +65,7 @@ public class BinaryTree
         if ( current == null)
             return;
 
-        System.out.println(current.get_value() + ' ');
+        System.out.println(Integer.toString( current.get_value() ) + ' ');
         pre_order_traversal(current.get_left());
         pre_order_traversal(current.get_right());
     }
@@ -76,7 +76,7 @@ public class BinaryTree
             return;
 
         in_order_traversal(current.get_left());
-        System.out.println(current.get_value() + ' ');
+        System.out.println(Integer.toString( current.get_value() ) + ' ');
         in_order_traversal(current.get_right());
     }
 
@@ -87,6 +87,6 @@ public class BinaryTree
 
         post_order_traversal(current.get_left());
         post_order_traversal(current.get_right());
-        System.out.println(current.get_value() + ' ');
+        System.out.println(Integer.toString( current.get_value() ) + ' ');
     }
 }
