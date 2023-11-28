@@ -7,6 +7,16 @@ public class BinaryTree
         root = null;
     }
 
+    Node<Integer> get_root()
+    {
+        return root;
+    }
+
+    void set_root(Node<Integer> node)
+    {
+        root = node;
+    }
+
     void insert(int value)
     {
         root = insert(root, new Node<Integer>(value));
