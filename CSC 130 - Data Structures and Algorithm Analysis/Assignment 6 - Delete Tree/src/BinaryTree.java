@@ -1,3 +1,8 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
+
 public class BinaryTree
 {
     private Node<Integer> root;
@@ -17,6 +22,36 @@ public class BinaryTree
     void set_root(Node<Integer> node)
     {
         root = node;
+    }
+
+
+    void read_file(String filename)
+    {
+        Scanner scanner;
+
+        try
+        {
+            File file = new File(filename);
+            scanner   = new Scanner(file);
+        }
+
+        catch (FileNotFoundException e)
+        {
+            throw new RuntimeException(ExceptionMessage.FILE_NOT_FOUND);
+        }
+
+        while ( scanner.hasNext() )
+        {
+            String next = scanner.next();
+
+            if ( next.equalsIgnoreCase("Delete") )
+            {
+                delete( scanner.nextInt() );
+                continue;
+            }
+
+            insert( Integer.parseInt(next) );
+        }
     }
 
 
