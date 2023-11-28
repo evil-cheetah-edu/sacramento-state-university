@@ -1,2 +1,6 @@
-package PACKAGE_NAME;public enum TraversalType {
+public enum TraversalType
+{
+    PRE_ORDER,
+    IN_ORDER,
+    POST_ORDER;
 }
