@@ -1,7 +1,8 @@
 public class Node<T>
 {
     private T       value;
-    private Node<T> next;
+    private Node<T> left;
+    private Node<T> right;
 
 
     Node ()
@@ -24,13 +25,23 @@ public class Node<T>
         this.value = value;
     }
 
-    Node<T> get_next()
+    Node<T> get_left()
     {
-        return next;
+        return left;
     }
 
-    void set_next(Node<T> next)
+    Node<T> get_right()
     {
-        this.next = next;
+        return right;
+    }
+
+    void set_left(Node<T> node)
+    {
+        this.left = node;
+    }
+
+    void set_right(Node<T> node)
+    {
+        this.right = node;
     }
 }
