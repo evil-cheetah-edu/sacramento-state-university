@@ -2,6 +2,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 
+import queue.Queue;
+
 
 public class BinaryTree
 {
@@ -82,6 +84,10 @@ public class BinaryTree
                 post_order_traversal(root);
                 return;
 
+            case BREADTH_FIRST:
+                breadth_first_traversal(root);
+                return;
+
             default:
                 throw new RuntimeException(ExceptionMessage.UNKNOWN_TRAVERSAL_TYPE);
         }
@@ -133,6 +139,34 @@ public class BinaryTree
         post_order_traversal(current.get_left());
         post_order_traversal(current.get_right());
         System.out.println(Integer.toString( current.get_value() ) + ' ');
+    }
+
+
+    private void breadth_first_traversal(Node<Integer> root)
+    {
+        Queue<Node<Integer>> current_level = new Queue<>();
+        Queue<Node<Integer>> next_level    = new Queue<>();
+
+        current_level.enqueue(root);
+
+        while ( !current_level.is_empty() )
+        {
+            Node<Integer> current = current_level.dequeue();
+            System.out.println( Integer.toString(current.get_value()) + ' ' );
+
+            if ( current.get_left() != null )
+                next_level.enqueue( current.get_left() );
+
+            if ( current.get_right() != null )
+                next_level.enqueue( current.get_right() );
+
+            if ( current_level.is_empty() )
+            {
+                current_level = next_level;
+                next_level    = new Queue<>();
+                System.out.println();
+            }
+        }
     }
 
 
