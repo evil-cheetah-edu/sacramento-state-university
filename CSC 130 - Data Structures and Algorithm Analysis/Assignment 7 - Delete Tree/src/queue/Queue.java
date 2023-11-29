@@ -7,7 +7,7 @@ public class Queue<T>
     private Node<T> rear;
 
 
-    void enqueue(T value)
+    public void enqueue(T value)
     {
         Node<T> new_node = new Node<>();
 
@@ -24,11 +24,11 @@ public class Queue<T>
         rear = new_node;
     }
 
-    T dequeue()
+    public T dequeue()
     {
-        if ( is_queue_empty() )
+        if ( is_empty() )
         {
-            rear = null;
+            front = null;
             throw new RuntimeException(ExceptionMessage.EMPTY_QUEUE_EXCEPTION_MESSAGE);
         }
 
@@ -39,9 +39,9 @@ public class Queue<T>
         return temp.get_value();
     }
 
-    T peek()
+    public T peek()
     {
-        if ( is_queue_empty() )
+        if ( is_empty() )
         {
             rear = null;
             throw new RuntimeException(ExceptionMessage.EMPTY_QUEUE_EXCEPTION_MESSAGE);
@@ -66,7 +66,7 @@ public class Queue<T>
     }
 
 
-    private boolean is_queue_empty()
+    public boolean is_empty()
     {
         return ( front == null );
     }
