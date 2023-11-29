@@ -14,5 +14,8 @@ public class Main
 
         System.out.println("Post Order:");
         tree.traverse(TraversalType.POST_ORDER);
+
+        System.out.println("Breadth First:");
+        tree.traverse(TraversalType.BREADTH_FIRST);
     }
 }
