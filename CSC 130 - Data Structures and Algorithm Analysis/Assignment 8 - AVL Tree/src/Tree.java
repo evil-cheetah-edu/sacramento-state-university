@@ -59,7 +59,7 @@ public class Tree
 
     void insert(int value)
     {
-            root = insert(root, new Node<>(value));
+        root = insert(root, new Node<>(value));
     }
 
     void delete(int value)
@@ -105,7 +105,38 @@ public class Tree
         else if ( new_node.get_value() > current.get_value() )
             current.set_right( insert(current.get_right(), new_node) );
 
-        return current;
+        return rebalance(current);
+    }
+
+
+    private Node<Integer> delete(Node<Integer> current, int value)
+    {
+        if ( current == null )
+            return null;
+
+        if ( value < current.get_value() )
+            current.set_left( delete(current.get_left(), value) );
+
+        else if ( current.get_value() < value )
+            current.set_right( delete(current.get_right(), value) );
+
+        else
+        {
+            if ( current.get_left() == null || current.get_right() == null )
+                if ( current.get_left() == null )
+                    return current.get_right();
+
+                else
+                    return current.get_left();
+
+            else
+            {
+                current.set_value( this.min( current.get_right() ) );
+                current.set_right( delete(current.get_right(), current.get_value()) );
+            }
+        }
+
+        return rebalance(current);
     }
 
 
@@ -152,7 +183,12 @@ public class Tree
         while ( !current_level.is_empty() )
         {
             Node<Integer> current = current_level.dequeue();
-            System.out.println( Integer.toString(current.get_value()) + ' ' );
+            System.out.printf(
+                "%d(%d, %d) ",
+                current.get_value(),
+                height(current),
+                balance(current)
+            );
 
             if ( current.get_left() != null )
                 next_level.enqueue( current.get_left() );
@@ -170,34 +206,92 @@ public class Tree
     }
 
 
-    private Node<Integer> delete(Node<Integer> current, int value)
+    private Node<Integer> rebalance(Node<Integer> node)
     {
-        if ( current == null )
+        if ( node == null )
             return null;
 
-        if ( value < current.get_value() )
-            current.set_left( delete(current.get_left(), value) );
+        node.set_height(
+            Math.max( height(node.get_left()), height(node.get_right()) ) + 1
+        );
 
-        else if ( current.get_value() < value )
-            current.set_right( delete(current.get_right(), value) );
-
-        else
-        {
-            if ( current.get_left() == null || current.get_right() == null )
-                if ( current.get_left() == null )
-                    return current.get_right();
-
-                else
-                    return current.get_left();
-
+        if ( balance(node) == 2 )
+            if ( balance(node.get_left()) == -1 )
+            {
+                node.set_left( rotate_left(node.get_left()) );
+                return rotate_right(node);
+            }
             else
             {
-                current.set_value( this.min( current.get_right() ) );
-                current.set_right( delete(current.get_right(), current.get_value()) );
+                return rotate_right(node);
             }
-        }
 
-        return current;
+        if ( balance(node) == -2 )
+            if ( balance(node.get_right()) == 1 )
+            {
+                node.set_right( rotate_right(node.get_right()) );
+                return rotate_left(node);
+            }
+            else
+            {
+                return rotate_left(node);
+            }
+
+        return node;
+    }
+
+
+    private Node<Integer> rotate_left(Node<Integer> X)
+    {
+        /*
+         *    X            Y 
+         *     \          /
+         *      Y   ->   X
+         *     /          \
+         *    Z            Z
+        **/
+        
+        Node<Integer> Y = X.get_right();
+        Node<Integer> Z = Y.get_left();
+
+        Y.set_left(  X );
+        X.set_right( Z );
+
+        X.set_height(
+                Math.max( height(X.get_left()), height(X.get_right()) ) + 1
+        );
+        Y.set_height(
+                Math.max( height(Y.get_left()), height(Y.get_right()) ) + 1
+        );
+
+        return Y;
+    }
+
+
+    private Node<Integer> rotate_right(Node<Integer> X)
+    {
+        /*
+         *      X        Y
+         *     /          \
+         *    Y     ->     X
+         *     \          /
+         *      Z        Z
+        **/
+
+        Node<Integer> Y = X.get_left();
+        Node<Integer> Z = Y.get_right();
+
+        Y.set_right( X );
+        X.set_left(  Z );
+
+        X.set_height(
+            Math.max( height(X.get_left()), height(X.get_right()) ) + 1
+        );
+        Y.set_height(
+            Math.max( height(Y.get_left()), height(Y.get_right()) ) + 1
+        );
+
+        return Y;
     }
 
 
@@ -207,5 +301,19 @@ public class Tree
             return current.get_value();
 
         return min(current.get_left());
+    }
+
+
+    private int balance(Node<Integer> node)
+    {
+        return height(node.get_left()) - height(node.get_right());
+    }
+
+    private int height(Node<Integer> node)
+    {
+        if ( node == null )
+            return 0;
+
+        return node.get_height();
     }
 }
