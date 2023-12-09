@@ -4,6 +4,8 @@ public class Node<T>
     private Node<T> left;
     private Node<T> right;
 
+    private int     height;
+
 
     Node ()
     {
@@ -35,6 +37,11 @@ public class Node<T>
         return right;
     }
 
+    int get_height()
+    {
+        return height;
+    }
+
     void set_left(Node<T> node)
     {
         this.left = node;
@@ -43,5 +50,10 @@ public class Node<T>
     void set_right(Node<T> node)
     {
         this.right = node;
+    }
+
+    void set_height(int height)
+    {
+        this.height = height;
     }
 }
