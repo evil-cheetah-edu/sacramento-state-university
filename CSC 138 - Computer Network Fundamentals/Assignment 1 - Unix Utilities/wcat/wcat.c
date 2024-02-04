@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
 
     if ( !file )
     {
-        printf("An error occurred while opening the file\n");
+        printf("wcat: cannot open file\n");
 
         exit(1);
     }
