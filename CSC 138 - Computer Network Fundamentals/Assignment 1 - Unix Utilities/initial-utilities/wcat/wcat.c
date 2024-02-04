@@ -7,21 +7,25 @@
 
 int main(int argc, char* argv[])
 {
+    /// Check for NO Arguments
     if (argc == 1)
         return 0;
 
-    for (int i = 0; argv[i] != NULL; ++i)
+    /// Iterate over Arguments
+    for (int i = 1; argv[i] != NULL; ++i)
     {
         FILE* file = fopen(argv[i], "r");
 
+        /// Check if File opens
         if ( !file )
         {
             printf("wcat: cannot open file\n");
             exit(1);
         }
 
+        /// Iterate over the File
         for (
-            char file_content[BUFFER_SIZE];
+            char file_content[BUFFER_SIZE] = "";
             fgets(file_content, BUFFER_SIZE, file) != NULL;
         )
         {
