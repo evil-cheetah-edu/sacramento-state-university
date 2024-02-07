@@ -2,17 +2,20 @@
 #include <stdlib.h>
 
 
-#define BUFFER_SIZE (100)
+#define BUFFER_SIZE          (100)
+
+#define NO_ARGUMENTS           (1)
+#define FILES_ARGUMENT_INDEX   (1)
 
 
 int main(int argc, char* argv[])
 {
     /// Check for NO Arguments
-    if (argc == 1)
+    if (argc == NO_ARGUMENTS)
         return 0;
 
     /// Iterate over Arguments
-    for (int i = 1; argv[i] != NULL; ++i)
+    for (int i = FILES_ARGUMENT_INDEX; argv[i] != NULL; ++i)
     {
         FILE* file = fopen(argv[i], "r");
 
