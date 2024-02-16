@@ -33,9 +33,3 @@ bin/
 
 # Ignore tests-out/
 tests-out
-
-# Ignore Executables
-wcat
-wgrep
-wunzip
-wzip
