@@ -59,8 +59,9 @@ void print_matched_lines(FILE* source, const char* search_term)
     while ( (length = getline(&line, &size, source)) != -1 )
     {
         if ( strstr(line, search_term) != NULL )
+        {
             printf("%s", line);
-
+        }
     }
 
     free(line);
