@@ -240,28 +240,28 @@ void InsertionSort(int data[], int size)
 
 
 
-void _Combine(int data[], int low, int mid, int high)
+void _Combine(int data[], int start, int mid, int end)
 {
-    int n1 = mid  - low + 1,
-        n2 = high - mid;
+    int n1 = mid - start + 1,
+        n2 = end - mid;
 
     int *Left  = new int[n1 + 1],
         *Right = new int[n2 + 1];
 
-    /// Copy A[low..mid] into Left
-    for (int i = low; i < mid; ++i)
+    /// Copy A[start .. mid] into Left
+    for (int i = 0; i < n1; ++i)
     {
-        Left[i] = data[i];
+        Left[i] = data[start + i];
     }
 
-    /// Copy A[mid+1..hi] into Right
-    for (int i = mid + 1; i < high; ++i)
+    /// Copy A[mid + 1 .. end] into Right
+    for (int i = 0; i < n2; ++i)
     {
-        Right[i] = data[i];
+        Right[i] = data[mid + 1 + i];
     }
 
     int X = max(Left[n1 - 1], Right[n2 - 1]) + 1;
-
+    
     /// Preferably, replace with `std::numeric_limits<int>::max()`
     /// Source: https://stackoverflow.com/questions/1855459/maximum-value-of-int
     Left[n1]  = X;
@@ -270,7 +270,7 @@ void _Combine(int data[], int low, int mid, int high)
     int i = 0,
         j = 0;
 
-    for (int k = low; k < high; ++k)
+    for (int k = start; k <= end; ++k)
     {
         if (Left[i] < Right[j])
         {
@@ -283,6 +283,9 @@ void _Combine(int data[], int low, int mid, int high)
             ++j;
         }
     }
+
+    delete[] Left;
+    delete[] Right;
 }
 
 
@@ -293,8 +296,8 @@ void MergeSort(int data[], int lo, int hi)
 
     int mid = ( lo + hi ) / 2;
 
-    MergeSort(data, lo,      mid);
-    MergeSort(data, mid + 1, hi);
+    MergeSort(data,    lo,   mid);
+    MergeSort(data, mid + 1,  hi);
 
     _Combine(data, lo, mid, hi);
 }
