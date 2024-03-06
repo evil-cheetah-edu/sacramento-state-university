@@ -225,13 +225,14 @@ void InsertionSort(int data[], int size)
 	for (int i = 1; i < size; ++i)
     {
         int key = data[i];
+        int j;
 
-        for (int j = i - 1; j >= 0 && data[j] > key; --j)
+        for (j = i - 1; j >= 0 && data[j] > key; --j)
         {
-            data[j + 1] = A[j];
+            data[j + 1] = data[j];
         }
 
-        A[j + 1] = key;
+        data[j + 1] = key;
     }
 }
 /*****************************************************************************/
@@ -239,12 +240,65 @@ void InsertionSort(int data[], int size)
 
 
 
+void _Combine(int data[], int low, int mid, int high)
+{
+    int n1 = mid  - low + 1,
+        n2 = high - mid;
+
+    int *Left  = new int[n1 + 1],
+        *Right = new int[n2 + 1];
+
+    /// Copy A[low..mid] into Left
+    for (int i = low; i < mid; ++i)
+    {
+        Left[i] = data[i];
+    }
+
+    /// Copy A[mid+1..hi] into Right
+    for (int i = mid + 1; i < high; ++i)
+    {
+        Right[i] = data[i];
+    }
+
+    int X = max(Left[n1 - 1], Right[n2 - 1]) + 1;
+
+    /// Preferably, replace with `std::numeric_limits<int>::max()`
+    /// Source: https://stackoverflow.com/questions/1855459/maximum-value-of-int
+    Left[n1]  = X;
+    Right[n2] = X;
+
+    int i = 0,
+        j = 0;
+
+    for (int k = low; k < high; ++k)
+    {
+        if (Left[i] < Right[j])
+        {
+            data[k] = Left[i];
+            ++i;
+        }
+        else
+        {
+            data[k] = Right[j];
+            ++j;
+        }
+    }
+}
+
+
 void MergeSort(int data[], int lo, int hi)
 {
-	//Write your code here
-	//You may create other functions if needed 
-	
+	if ( lo >= hi )
+        return;
+
+    int mid = ( lo + hi ) / 2;
+
+    MergeSort(data, lo,      mid);
+    MergeSort(data, mid + 1, hi);
+
+    _Combine(data, lo, mid, hi);
 }
+
 /*****************************************************************************/
 
 
