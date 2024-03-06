@@ -305,13 +305,42 @@ void MergeSort(int data[], int lo, int hi)
 /*****************************************************************************/
 
 
+int _Partition(int data[], int start, int end)
+{
+    int value = data[end];
+
+    /// i = Partition Index
+    int i = start - 1;
+
+    for (int j = start; j < end; ++j)
+    {
+        if ( data[j] <= value )
+        {
+            int temporary = data[  j  ];
+            data[  j  ]   = data[i + 1];
+            data[i + 1]   = temporary;
+
+            ++i;
+        }
+    }
+
+    int temporary = data[ end ];
+    data[ end ]   = data[i + 1];
+    data[i + 1]   = temporary;
+
+    return i + 1;
+}
 
 
 void QuickSort(int data[], int lo, int hi)
 {
-	//Write your code here
-	//You may create other functions if needed 
-	
+    if ( lo >= hi )
+        return;
+
+    int pivot = _Partition(data, lo, hi);
+
+    QuickSort(data,    lo,     pivot - 1);
+    QuickSort(data, pivot + 1,    hi    );
 }
 /*****************************************************************************/
 
