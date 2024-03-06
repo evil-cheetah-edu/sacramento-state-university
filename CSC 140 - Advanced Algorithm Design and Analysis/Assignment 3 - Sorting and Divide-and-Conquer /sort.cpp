@@ -222,8 +222,17 @@ bool IsSorted(int data[], int size)
 
 void InsertionSort(int data[], int size)
 {
-	//Write your code here
-	
+	for (int i = 1; i < size; ++i)
+    {
+        int key = data[i];
+
+        for (int j = i - 1; j >= 0 && data[j] > key; --j)
+        {
+            data[j + 1] = A[j];
+        }
+
+        A[j + 1] = key;
+    }
 }
 /*****************************************************************************/
 
