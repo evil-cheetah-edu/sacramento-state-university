@@ -33,3 +33,6 @@ bin/
 
 # Ignore tests-out/
 tests-out
+
+# Compiled Executables
+sort
