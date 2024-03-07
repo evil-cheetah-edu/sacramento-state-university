@@ -9,7 +9,7 @@ using namespace std;
 const int MAX_SIZE = 10000000;
 
 // Set this to true if you wish the arrays to be printed.
-const bool OUTPUT_DATA = true;
+const bool OUTPUT_DATA = false;
 
 
 void ReadInput(string& sortAlg, int& size);
@@ -322,7 +322,7 @@ int _Partition(int data[], int start, int end)
     }
 
     std::swap(data[i + 1], data[end]);
-    
+
     return i + 1;
 }
 
