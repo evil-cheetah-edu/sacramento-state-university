@@ -348,9 +348,7 @@ void QuickSort(int data[], int lo, int hi)
 
 void LibSort(int data[], int size)
 {
-	//Write your code here
-	//Your code should simply call the STL sorting function  
-	
+	std::sort(data, data + size);
 }
 /*****************************************************************************/
 
