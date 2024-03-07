@@ -4,6 +4,10 @@
 #include <iostream>
 #include <algorithm>
 
+/// For Random Generation
+#include <ctime>
+#include <cstdlib>
+
 using namespace std;
 
 const int MAX_SIZE = 10000000;
@@ -34,6 +38,8 @@ void printData(int data[], int size, string title);
 
 int main(void)
 {
+    std::srand( std::time(nullptr) );
+
 	int size;
 	string sortAlg;
 	ReadInput(sortAlg, size);
@@ -327,11 +333,20 @@ int _Partition(int data[], int start, int end)
 }
 
 
+/// Reference: https://en.cppreference.com/w/cpp/numeric/random/rand
+void _RandomizePivot(int data[], int start, int end)
+{
+    int random_pivot = std::rand() % (end - start + 1) + start;
+    std::swap(data[random_pivot], data[end]);
+}
+
+
 void QuickSort(int data[], int lo, int hi)
 {
     if ( lo >= hi )
         return;
 
+    _RandomizePivot(data, lo, hi);
     int pivot = _Partition(data, lo, hi);
 
     QuickSort(data,    lo,     pivot - 1);
