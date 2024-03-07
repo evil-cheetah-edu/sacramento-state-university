@@ -316,18 +316,13 @@ int _Partition(int data[], int start, int end)
     {
         if ( data[j] <= value )
         {
-            int temporary = data[  j  ];
-            data[  j  ]   = data[i + 1];
-            data[i + 1]   = temporary;
-
             ++i;
+            std::swap(data[i], data[j]);
         }
     }
 
-    int temporary = data[ end ];
-    data[ end ]   = data[i + 1];
-    data[i + 1]   = temporary;
-
+    std::swap(data[i + 1], data[end]);
+    
     return i + 1;
 }
 
