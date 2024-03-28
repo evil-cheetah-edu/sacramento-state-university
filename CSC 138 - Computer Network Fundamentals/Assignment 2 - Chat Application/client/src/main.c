@@ -79,3 +79,63 @@ int main(int argc, char *argv[]) {
 
     return 0; // Exit the program.
 }
+
+
+int initialize_connection(const char *server_hostname, const char *port)
+{
+    int status;
+    int socket_fd;
+    struct addrinfo hints;
+    struct addrinfo *server_info;
+    struct addrinfo *p;
+
+    memset(&hints, 0, sizeof(hints));
+
+    hints.ai_family   = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags    = AI_PASSIVE;
+
+    if ( (status = getaddrinfo(server_hostname, port, &hints, &server_info)) != 0 )
+    {
+        fprintf(
+            stderr,
+            "Failed getting the Host Information...\n"
+            "getaddrinfo: %s\n",
+            gai_strerror(status)
+        );
+        perror("getaddrinfo");
+        return -1;
+    }
+
+    for (p = server_info; p != NULL; p = p->ai_next)
+    {
+        int socket_fd =  socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+
+        if ( socket_fd == -1 )
+        {
+            fprintf(stderr, "Failed creating a Socket...\n");
+            perror("client: socket");
+            continue;
+        }
+
+        if ( connect(socket_fd, p->ai_addr, p->ai_addrlen) == -1 )
+        {
+            fprintf(stderr, "Failed connecting to the Host...\n");
+            perror("cleint: connect");
+            close(socket_fd);
+            continue;
+        }
+
+        break;
+    }
+
+    if ( p == NULL )
+    {
+        fprintf(stderr, "Failed to establish a connection...\n");
+        return -1;
+    }
+
+    freeaddrinfo(server_info);
+
+    return socket_fd;
+}
