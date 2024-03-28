@@ -128,7 +128,7 @@ int initialize_server()
 
     if ( (socket_fd = socket(PF_INET, SOCK_STREAM, 0)) == -1 )
     {
-        fprintf(stderr, "Socket Initialization Failed...");
+        fprintf(stderr, "Socket Initialization Failed...\n");
         perror("socket");
         return -1;
     }
@@ -139,7 +139,7 @@ int initialize_server()
         ) == -1
     )
     {
-        fprintf(stderr, "Failed setting Socket Optios...");
+        fprintf(stderr, "Failed setting Socket Optios...\n");
         perror("setsockopt");
         return -1;
     }
@@ -152,17 +152,19 @@ int initialize_server()
 
     if ( bind(socket_fd, (struct sockaddr *)&address, sizeof(address)) == -1 )
     {
-        fprintf(stderr, "Failed binding a name to a Socket...");
+        fprintf(stderr, "Failed binding a name to a Socket...\n");
         perror("bind");
         return -1;
     }
 
     if ( listen(socket_fd, MAX_CLIENTS) == -1 )
     {
-        fprintf(stderr, "Failed to start listening on a Socket...");
+        fprintf(stderr, "Failed to start listening on a Socket...\n");
         perror("listen");
         return -1;
     }
+
+    printf("Application is Listening on Port %d...\n", PORT);
 
     return socket_fd;
 }
@@ -176,7 +178,7 @@ void accept_new_connection(int master_socket, int client_socket[], int max_clien
 
     if ( (new_socket = accept(master_socket, (struct sockaddr *)&address, &address_length) == -1) )
     {
-        fprintf(stderr, "Failed accepting new Client...");
+        fprintf(stderr, "Failed accepting new Client...\n");
         perror("accept");
         exit(1);
     }
@@ -195,12 +197,12 @@ void accept_new_connection(int master_socket, int client_socket[], int max_clien
         if ( client_socket[i] == 0 )
         {
             client_socket[i] = new_socket;
-            fprintf(stdout, "Adding client to a list at index: %d", i);
+            fprintf(stdout, "Adding client to a list at index: %d\n", i);
             return;
         }
     }
 
-    char *full_list_message = "Server is full... Please, try another time...";
+    char *full_list_message = "Server is full... Please, try another time...\n";
     send(new_socket, full_list_message, strlen(full_list_message), 0);
     close(new_socket);
 }
