@@ -80,9 +80,17 @@ int main() {
 
     // Step 1: Initialize the server to start listening for connections.
     // TODO: Call initialize_server and check for errors.
+    master_socket = initialize_server();
+
+    if ( master_socket == -1 )
+    {
+        fprintf(stderr, "An error occurred while initializing socket! Terminating...");
+        exit(1);
+    }
 
     // Initialize client_socket array to 0.
     // TODO: Zero out the client_socket array to indicate no clients are connected initially.
+    memset(client_socket, 0, sizeof(client_socket));
 
     // Main server loop.
     while (1) {
@@ -157,4 +165,42 @@ int initialize_server()
     }
 
     return socket_fd;
+}
+
+
+void accept_new_connection(int master_socket, int client_socket[], int max_clients)
+{
+    int new_socket;
+    struct sockaddr_in address;
+    socklen_t address_length = sizeof(address);
+
+    if ( (new_socket = accept(master_socket, (struct sockaddr *)&address, &address_length) == -1) )
+    {
+        fprintf(stderr, "Failed accepting new Client...");
+        perror("accept");
+        exit(1);
+    }
+
+    fprintf(
+        stdout,
+        "New Client Connection:\n"
+        "   Socket FD: %s\n"
+        "   IP:        %s\n"
+        "   Port:      %d\n",
+        new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port)
+    );
+
+    for (int i = 0; i < MAX_CLIENTS; ++i)
+    {
+        if ( client_socket[i] == 0 )
+        {
+            client_socket[i] = new_socket;
+            fprintf(stdout, "Adding client to a list at index: %d", i);
+            return;
+        }
+    }
+
+    char *full_list_message = "Server is full... Please, try another time...";
+    send(new_socket, full_list_message, strlen(full_list_message), 0);
+    close(new_socket);
 }
