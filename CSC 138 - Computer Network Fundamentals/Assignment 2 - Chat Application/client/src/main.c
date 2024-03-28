@@ -139,3 +139,21 @@ int initialize_connection(const char *server_hostname, const char *port)
 
     return socket_fd;
 }
+
+
+void handle_server_message(int sock)
+{
+    char buffer[BUFFER_SIZE];
+    int  message_length;
+
+    if ( (message_length = recv(sock, buffer, BUFFER_SIZE - 1, 0)) == -1 )
+    {
+        fprintf(stderr, "Failed while receiving the data from Server...\n");
+        perror("recv");
+        exit(1);
+    }
+
+    buffer[message_length] = '\0';
+    
+    fprintf(stdout, "%s\n", buffer);
+}
