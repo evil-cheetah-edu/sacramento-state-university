@@ -107,3 +107,54 @@ int main() {
     
     return 0;
 }
+
+
+
+int initialize_server()
+{
+    int socket_fd;
+    int socket_option = 1;
+
+    struct sockaddr_in address;
+    int address_length = sizeof(address);
+
+    if ( (socket_fd = socket(PF_INET, SOCK_STREAM, 0)) == -1 )
+    {
+        fprintf(stderr, "Socket Initialization Failed...");
+        perror("socket");
+        return -1;
+    }
+
+    if ( setsockopt(
+            socket_fd, SOL_SOCKET, SO_REUSEADDR,
+            &socket_option, sizeof(socket_option)
+        ) == -1
+    )
+    {
+        fprintf(stderr, "Failed setting Socket Optios...");
+        perror("setsockopt");
+        return -1;
+    }
+
+    address.sin_family      = AF_INET;
+    address.sin_port        = htons(PORT);
+    address.sin_addr.s_addr = INADDR_ANY;
+
+    memset(address.sin_zero, '\0', sizeof(address.sin_zero));
+
+    if ( bind(socket_fd, (struct sockaddr *)&address, sizeof(address)) == -1 )
+    {
+        fprintf(stderr, "Failed binding a name to a Socket...");
+        perror("bind");
+        return -1;
+    }
+
+    if ( listen(socket_fd, MAX_CLIENTS) == -1 )
+    {
+        fprintf(stderr, "Failed to start listening on a Socket...");
+        perror("listen");
+        return -1;
+    }
+
+    return socket_fd;
+}
