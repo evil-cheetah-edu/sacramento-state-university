@@ -121,7 +121,7 @@ int main() {
 int initialize_server()
 {
     int socket_fd;
-    int socket_option = 1;
+    int socket_option = 1; /// reuse port
 
     struct sockaddr_in address;
     int address_length = sizeof(address);
@@ -172,11 +172,11 @@ int initialize_server()
 
 void accept_new_connection(int master_socket, int client_socket[], int max_clients)
 {
-    int new_socket;
-    struct sockaddr_in address;
-    socklen_t address_length = sizeof(address);
+    int client_sd;
+    struct sockaddr_in client_address;
+    socklen_t address_length = sizeof(client_address);
 
-    if ( (new_socket = accept(master_socket, (struct sockaddr *)&address, &address_length) == -1) )
+    if ( (client_sd = accept(master_socket, (struct sockaddr *)&client_address, &address_length) == -1) )
     {
         fprintf(stderr, "Failed accepting new Client...\n");
         perror("accept");
@@ -185,24 +185,64 @@ void accept_new_connection(int master_socket, int client_socket[], int max_clien
 
     fprintf(
         stdout,
-        "New Client Connection:\n"
-        "   Socket FD: %s\n"
-        "   IP:        %s\n"
-        "   Port:      %d\n",
-        new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port)
+        "Client attempts to connect:\n"
+        "   SD:   %s\n"
+        "   IP:   %s\n"
+        "   Port: %d\n",
+        client_sd, inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port)
     );
 
     for (int i = 0; i < MAX_CLIENTS; ++i)
     {
         if ( client_socket[i] == 0 )
         {
-            client_socket[i] = new_socket;
+            client_socket[i] = client_sd;
             fprintf(stdout, "Adding client to a list at index: %d\n", i);
             return;
         }
     }
 
     char *full_list_message = "Server is full... Please, try another time...\n";
-    send(new_socket, full_list_message, strlen(full_list_message), 0);
-    close(new_socket);
+    send(client_sd, full_list_message, strlen(full_list_message), 0);
+    close(client_sd);
+}
+
+
+void handle_client_activity(int client_socket[], fd_set read_fds, int max_clients)
+{
+    int  input_read;
+    char buffer[BUFFER_SIZE];
+
+    struct sockaddr_in client_address;
+    socklen_t address_length = sizeof(client_address);
+
+    for (int i = 0; i < max_clients; ++i)
+    {
+        int client_sd = client_socket[i];
+
+        if ( !FD_ISSET(client_sd, &read_fds) )
+            continue;
+
+        if ( (input_read = read(client_sd, buffer, BUFFER_SIZE)) == 0 )
+        {
+            getpeername(client_sd, (struct sockaddr*)&client_address, &address_length);
+            
+            fprintf(
+                stdout,
+                "Client disconnected:\n"
+                "   SD:   %s\n"
+                "   IP:   %s\n"
+                "   Port: %d\n",
+                client_sd, inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port)
+            );
+
+            close(client_sd);
+            client_socket[i] = 0;
+        }
+        else
+        {
+            buffer[input_read] = '\0';
+            send_to_all_other_clients(client_sd, client_socket, max_clients, buffer);
+        }
+    }
 }
