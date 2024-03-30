@@ -288,7 +288,6 @@ void handle_client_activity(int client_socket[], fd_set read_fds, int max_client
         if ( (input_size = read(client_sd, buffer, BUFFER_SIZE)) <= 0 )
         {
             getpeername(client_sd, (struct sockaddr*)&client_address, &address_length);
-            // FD_ZERO(client_sd);
             
             fprintf(
                 stdout,
@@ -305,7 +304,13 @@ void handle_client_activity(int client_socket[], fd_set read_fds, int max_client
         else
         {
             buffer[input_size] = '\0';
-            fprintf(stdout, "Server Received: '%s' from Socket %d\n", buffer, client_sd);
+            fprintf(
+                stdout,
+                "Payload Received:\n"
+                "   Socket   %d\n"
+                "   Payload: %s",
+                client_sd, buffer 
+            );
             send_to_all_other_clients(client_sd, client_socket, max_clients, buffer);
         }
     }
