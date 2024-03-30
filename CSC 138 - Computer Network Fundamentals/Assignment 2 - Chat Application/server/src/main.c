@@ -4,11 +4,13 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include <netdb.h>
 
-#define PORT 12345
+#define PORT "12345"
 #define BUFFER_SIZE 1024
 #define MAX_CLIENTS 30
 
@@ -74,7 +76,8 @@ void send_to_all_other_clients(int sender_sock, int client_sockets[], int max_cl
 // Additional helper functions or definitions as necessary.
 
 
-int main() {
+int main()
+{
     int master_socket, client_socket[MAX_CLIENTS], max_sd;
     fd_set readfds;
 
@@ -84,7 +87,7 @@ int main() {
 
     if ( master_socket == -1 )
     {
-        fprintf(stderr, "An error occurred while initializing socket! Terminating...");
+        fprintf(stderr, "An error occurred while initializing socket! Terminating...\n");
         exit(1);
     }
 
@@ -93,26 +96,72 @@ int main() {
     memset(client_socket, 0, sizeof(client_socket));
 
     // Main server loop.
-    while (1) {
+    while ( 1 )
+    {
         // Step 2: Clear and setup file descriptor sets.
         // TODO: Use FD_ZERO and FD_SET on readfds and add master_socket and all client sockets.
+        FD_ZERO(&readfds);
+        FD_SET(master_socket, &readfds);
+        max_sd = master_socket;
+
+        for (int i = 0; i < MAX_CLIENTS; ++i)
+        {
+            if ( client_socket[i] > 0 )
+            {
+                FD_SET(client_socket[i], &readfds);
+            }
+
+            if ( client_socket[i] > max_sd )
+            {
+                max_sd = client_socket[i];
+            }
+        }
 
         // Step 3: Wait for activity on any socket using select.
         // TODO: Use select to wait for activity and check for errors or interruptions.
+        if ( select(max_sd + 1, &readfds, NULL, NULL, NULL) == -1 )
+        {
+            fprintf(stderr, "Error while selecting Socket Descriptor...\n");
+            perror("select");
+            exit(1);
+        }
 
         // Step 4: Check for new connections on the master_socket.
         // TODO: If there's activity on master_socket, call accept_new_connection.
+        if ( FD_ISSET(master_socket, &readfds) )
+        {
+            accept_new_connection(master_socket, client_socket, MAX_CLIENTS);
+            fprintf(stdout, "Client Accepted...\n");
+        }
 
         // Step 5: Handle IO activity from clients.
         // TODO: Loop through client sockets, checking each for activity. If any, call handle_client_activity.
+        for (int i = 0; i <= MAX_CLIENTS; ++i)
+        {
+            if ( FD_ISSET(client_socket[i], &readfds) )
+            {
+                handle_client_activity(client_socket, readfds, MAX_CLIENTS);
+            }
 
+            if ( client_socket[i] > max_sd )
+            {
+                max_sd = client_socket[i];
+            }
+        }
         // Step 6: Clean up disconnected clients.
         // TODO: Inside handle_client_activity, ensure proper cleanup of disconnected client sockets.
     }
 
     // Clean up before shutting down the server.
     // TODO: Close all active client sockets and the master socket before exiting.
+    for (int i = 0; i < MAX_CLIENTS; ++i)
+    {
+        if ( client_socket[i] != 0 )
+            close(client_socket[i]);
+    }
     
+    close(master_socket);
+
     return 0;
 }
 
@@ -120,51 +169,63 @@ int main() {
 
 int initialize_server()
 {
+    int rv;
     int socket_fd;
     int socket_option = 1; /// reuse port
 
-    struct sockaddr_in address;
-    int address_length = sizeof(address);
+    struct addrinfo hints, *ai, *p;
 
-    if ( (socket_fd = socket(PF_INET, SOCK_STREAM, 0)) == -1 )
+    memset(&hints, 0, sizeof(hints));
+
+    hints.ai_family   = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags    = AI_PASSIVE;
+
+    if ( (rv = getaddrinfo(NULL, PORT, &hints, &ai)) != 0 )
     {
-        fprintf(stderr, "Socket Initialization Failed...\n");
-        perror("socket");
+        fprintf(
+            stderr,
+            "Failed getting Address Info...\n"
+            "selectserver: %s\n", gai_strerror(rv)
+        );
+        perror("getaddrinfo");
         return -1;
     }
 
-    if ( setsockopt(
-            socket_fd, SOL_SOCKET, SO_REUSEADDR,
-            &socket_option, sizeof(socket_option)
-        ) == -1
-    )
+    for (p = ai; p != NULL; p = p->ai_next)
     {
-        fprintf(stderr, "Failed setting Socket Optios...\n");
-        perror("setsockopt");
+        socket_fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+
+        if ( socket_fd < 0 )
+        {
+            continue;
+        }
+
+        setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &socket_option, sizeof(socket_option));
+
+        if ( bind(socket_fd, p->ai_addr, p->ai_addrlen) < 0 )
+        {
+            close(socket_fd);
+            continue;
+        }
+
+        break;
+    }
+
+    if ( p == NULL )
+    {
+        fprintf(stderr, "Failed to Bind...\n");
         return -1;
     }
 
-    address.sin_family      = AF_INET;
-    address.sin_port        = htons(PORT);
-    address.sin_addr.s_addr = INADDR_ANY;
-
-    memset(address.sin_zero, '\0', sizeof(address.sin_zero));
-
-    if ( bind(socket_fd, (struct sockaddr *)&address, sizeof(address)) == -1 )
-    {
-        fprintf(stderr, "Failed binding a name to a Socket...\n");
-        perror("bind");
-        return -1;
-    }
-
-    if ( listen(socket_fd, MAX_CLIENTS) == -1 )
+    if ( listen(socket_fd, 10) == -1 )
     {
         fprintf(stderr, "Failed to start listening on a Socket...\n");
         perror("listen");
         return -1;
     }
 
-    printf("Application is Listening on Port %d...\n", PORT);
+    printf("Application is Listening on Port %s...\n", PORT);
 
     return socket_fd;
 }
@@ -176,7 +237,7 @@ void accept_new_connection(int master_socket, int client_socket[], int max_clien
     struct sockaddr_in client_address;
     socklen_t address_length = sizeof(client_address);
 
-    if ( (client_sd = accept(master_socket, (struct sockaddr *)&client_address, &address_length) == -1) )
+    if ( (client_sd = accept(master_socket, (struct sockaddr *)&client_address, &address_length)) == -1 )
     {
         fprintf(stderr, "Failed accepting new Client...\n");
         perror("accept");
@@ -186,18 +247,17 @@ void accept_new_connection(int master_socket, int client_socket[], int max_clien
     fprintf(
         stdout,
         "Client attempts to connect:\n"
-        "   SD:   %s\n"
+        "   SD:   %d\n"
         "   IP:   %s\n"
         "   Port: %d\n",
         client_sd, inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port)
     );
 
-    for (int i = 0; i < MAX_CLIENTS; ++i)
+    for (int i = 0; i < max_clients; ++i)
     {
         if ( client_socket[i] == 0 )
         {
             client_socket[i] = client_sd;
-            fprintf(stdout, "Adding client to a list at index: %d\n", i);
             return;
         }
     }
@@ -210,7 +270,7 @@ void accept_new_connection(int master_socket, int client_socket[], int max_clien
 
 void handle_client_activity(int client_socket[], fd_set read_fds, int max_clients)
 {
-    int  input_read;
+    int  input_size;
     char buffer[BUFFER_SIZE];
 
     struct sockaddr_in client_address;
@@ -221,16 +281,19 @@ void handle_client_activity(int client_socket[], fd_set read_fds, int max_client
         int client_sd = client_socket[i];
 
         if ( !FD_ISSET(client_sd, &read_fds) )
+        {
             continue;
+        }
 
-        if ( (input_read = read(client_sd, buffer, BUFFER_SIZE)) == 0 )
+        if ( (input_size = read(client_sd, buffer, BUFFER_SIZE)) <= 0 )
         {
             getpeername(client_sd, (struct sockaddr*)&client_address, &address_length);
+            // FD_ZERO(client_sd);
             
             fprintf(
                 stdout,
                 "Client disconnected:\n"
-                "   SD:   %s\n"
+                "   SD:   %d\n"
                 "   IP:   %s\n"
                 "   Port: %d\n",
                 client_sd, inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port)
@@ -241,8 +304,24 @@ void handle_client_activity(int client_socket[], fd_set read_fds, int max_client
         }
         else
         {
-            buffer[input_read] = '\0';
+            buffer[input_size] = '\0';
+            fprintf(stdout, "Server Received: '%s' from Socket %d\n", buffer, client_sd);
             send_to_all_other_clients(client_sd, client_socket, max_clients, buffer);
+        }
+    }
+}
+
+
+void send_to_all_other_clients(int sender_sock, int client_sockets[], int max_clients, char *msg)
+{
+    for (int i = 0; i < max_clients; ++i)
+    {
+        if (
+            client_sockets[i] != sender_sock &&
+            client_sockets[i] != 0
+        )
+        {
+            send(client_sockets[i], msg, strlen(msg), 0);
         }
     }
 }
