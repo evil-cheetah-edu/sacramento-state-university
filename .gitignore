@@ -36,3 +36,11 @@ tests-out
 
 # Compiled Executables
 sort
+
+# Antlr4 Files
+*.g4
+*.interp
+*.tokens
+*Lexer.java
+*Listener.java
+*Parser.java
