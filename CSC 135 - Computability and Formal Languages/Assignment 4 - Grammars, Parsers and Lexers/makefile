@@ -10,7 +10,12 @@ GRAMMAR_FILE=JSON
 SOURCE_DIR=src
 
 # Build target
-all: copy_grammar compile
+all: clone_grammar copy_grammar compile
+
+
+clone_grammar:
+	git submodule update --init --recursive	
+
 
 copy_grammar:
 	cp $(GRAMMAR_DIR)/$(GRAMMAR_FILE).g4 $(SOURCE_DIR)
