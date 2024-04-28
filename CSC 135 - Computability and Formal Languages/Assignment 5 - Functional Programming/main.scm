@@ -65,3 +65,12 @@
         (else (mem item (cdr list)))
     )
 )
+
+
+; (ins item <List>) Implementation
+(define (ins item list)
+    (if (mem item list)
+        list
+        (cons item list)
+    )
+)
