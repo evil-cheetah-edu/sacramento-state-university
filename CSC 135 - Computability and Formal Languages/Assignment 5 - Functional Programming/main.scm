@@ -6,3 +6,14 @@
         )
     )
 )
+
+; (len `<List>) Implementation
+(define (len list)
+    (letrec ((length_func (lambda (slice result)
+        (if (null? slice)
+            result
+            (length_func (cdr slice) (+ result 1))
+        )
+    )))
+    (length_func list 0))
+)
