@@ -44,3 +44,6 @@ sort
 *Lexer.java
 *Listener.java
 *Parser.java
+
+# Racket Temporary Files
+*.scm~
