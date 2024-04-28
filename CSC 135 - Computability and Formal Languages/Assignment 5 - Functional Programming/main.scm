@@ -74,3 +74,26 @@
         (cons item list)
     )
 )
+
+
+; (numT (bool lambda) <List>) Implementation
+(define (numT bool-lambda list)
+    ; Function Definition
+    (letrec (
+        (count-true (lambda (list result)
+            (if (null? list)
+                result
+                (count-true
+                    (cdr list) 
+                    (if (bool-lambda (car list))
+                        (+ result 1)
+                        result
+                    )
+                )
+            ))
+        )
+    )
+
+    ; Main Call
+    (count-true list 0))
+)
