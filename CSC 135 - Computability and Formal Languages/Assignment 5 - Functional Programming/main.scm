@@ -12,16 +12,16 @@
 (define (len list)
     ; Recursion Function Definition
     (letrec (
-        (length_func (lambda (slice result)
+        (length-func (lambda (slice result)
             (if (null? slice)
                 result
-                (length_func (cdr slice) (+ result 1))
+                (length-func (cdr slice) (+ result 1))
             ))
         )
     )
     
     ; Main Call
-    (length_func list 0))
+    (length-func list 0))
 )
 
 
@@ -34,7 +34,7 @@
         ; Main Call
         (letrec (
             ; Function Definition
-            (maxmin_func (lambda (list current-max current-min)
+            (maxmin-func (lambda (list current-max current-min)
                 (if (null? list)
                     (cons current-max current-min)
                     (
@@ -42,7 +42,7 @@
                             (head (car list))
                             (tail (cdr list))
                         )
-                        (maxmin_func tail 
+                        (maxmin-func tail 
                             (if (> head current-max) head current-max)
                             (if (< head current-min) head current-min)
                         )
@@ -52,7 +52,7 @@
         )
 
         ; Function Call
-        (maxmin_func (cdr list) (car list) (car list)))
+        (maxmin-func (cdr list) (car list) (car list)))
     )
 )
 
@@ -96,4 +96,21 @@
 
     ; Main Call
     (count-true list 0))
+)
+
+
+; (moreT bool-lambda <Left-List> <Right-List>) Implementation
+(define (moreT bool-lambda left-list right-list)
+    (
+        let (
+            (left-count  (numT bool-lambda left-list))
+            (right-count (numT bool-lambda right-list))
+        )
+        
+        (cond
+            ((> left-count right-count) 1) ; Return `1` if First  List Result is Bigger 
+            ((< left-count right-count) 2) ; Return `2` if Second List Result is Bigger
+            (else 0)
+        )
+    )
 )
