@@ -8,7 +8,7 @@
 )
 
 
-; (len `<List>) Implementation
+; (len <List>) Implementation
 (define (len list)
     ; Recursion Function Definition
     (letrec (
@@ -25,7 +25,7 @@
 )
 
 
-; (maxmin `<List>) Implementation
+; (maxmin <List>) Implementation
 (define (maxmin list)
     (if (null? list)
         ; Throw Exception if `list` is empty 
@@ -53,5 +53,15 @@
 
         ; Function Call
         (maxmin_func (cdr list) (car list) (car list)))
+    )
+)
+
+
+; (mem item <List>) Implementation
+(define (mem item list)
+    (cond
+        ((null? list) #f)
+        ((equal? item (car list)) #t)
+        (else (mem item (cdr list)))
     )
 )
