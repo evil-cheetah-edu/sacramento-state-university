@@ -47,4 +47,4 @@ sort
 
 # Racket Temporary Files
 *.scm~
-*.scm#2#
+*.scm#*
