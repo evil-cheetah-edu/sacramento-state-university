@@ -23,9 +23,70 @@ void start_server(int port) {
 }
 
 
-int create_socket(int port) {
-    // TODO: Create and configure a TCP socket
-    // Return the socket descriptor
+int create_socket(int port)
+{
+    int socket_option = 1; // reuse port
+
+    int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    
+    if (socket_fd < 0)
+    {
+        fprintf(stderr, "Failed creating a socket...\n");
+        perror("socket");
+        exit(1);
+    }
+
+
+    if (
+        setsockopt(
+            socket_fd,
+            SOL_SOCKET,
+            SO_REUSEADDR,
+            &socket_option, sizeof(socket_option)
+        ) < 0
+    )
+    {
+        fprintf(stderr, "Failed setting socket options...\n");
+        perror("setsockopt");
+        exit(1);
+    }
+
+    struct sockaddr_in server_address;
+    
+    memset(&server_address, 0, sizeof(server_address));
+
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_port = htons(port);
+
+    if (
+        bind(
+            socket_fd,
+            (struct sockaddr *)&server_address,
+            sizeof(server_address)
+        ) < 0
+    )
+    {
+        fprintf(stderr, "Failed to Bind...\n");
+        perror("bind");
+        close(socket_fd);
+        exit(1);
+    }
+
+    /// TODO: Pull from Environment Variable
+    int backlog_connections = 10;
+
+    if (
+        listen(socket_fd, backlog_connections) < 0
+    )
+    {
+        fprintf(stderr, "Failed to start listening on a Socket...\n");
+        perror("listen");
+        close(socket_fd);
+        exit(1);
+    }
+
+    return socket_fd;
 }
 
 
