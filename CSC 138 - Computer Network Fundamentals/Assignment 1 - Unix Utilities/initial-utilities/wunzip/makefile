@@ -3,8 +3,8 @@ CC = gcc
 CFLAGS = -Wall
 
 # Target executable name
-TARGET = wzip
-SOURCE = src/wzip
+TARGET = wunzip
+SOURCE = src/wunzip
 
 # Build target
 $(TARGET): $(SOURCE).c
