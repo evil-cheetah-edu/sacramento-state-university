@@ -90,11 +90,32 @@ int create_socket(int port)
 }
 
 
-void handle_connections(int server_sock) {
-    // TODO: Implement connection handling:
-    // 1. Accept a new connection.
-    // 2. Handle the request in a separate function.
-    // 3. Close the connection.
+void handle_connections(int server_sock)
+{
+    struct sockaddr_in client_address;
+    socklen_t address_length = sizeof(client_address);
+
+
+    while (1)
+    {
+        int client_sd = accept(
+            server_sock,
+            (struct sockaddr *)&client_address,
+            &address_length
+        );
+
+        if ( client_sd < 0 )
+        {
+            fprintf(stderr, "Failed accept request from client...\n");
+            perror("accept");
+            close(client_sd);
+            continue;
+        }
+
+        process_request(client_sd);
+
+        close(client_sd);
+    }
 }
 
 
