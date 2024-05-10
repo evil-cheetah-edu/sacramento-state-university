@@ -18,8 +18,10 @@
 #define BACKLOG_CONNECTIONS   (10)
 
 
-void _InternalServerErrorException(int client_sd);
+void _BadRequestException(int client_sd);
+void _MethodNotAllowed(int client_sd);
 void _NotFoundException(int client_sd);
+void _InternalServerErrorException(int client_sd);
 
 
 int main(int argc, char *argv[])
@@ -188,13 +190,7 @@ void process_request(int client_sock)
         return;
     }
     
-    send_response(
-        client_sock,
-        "HTTP/1.1 405 Method Not Allowed",
-        get_mime_type(""),
-        NULL,
-        0
-    );
+    _MethodNotAllowed(client_sock);
 }
 
 
@@ -321,6 +317,23 @@ const char* get_mime_type(const char *filename)
 }
 
 
+
+/**
+ * @brief Returns a `400 Bad Request` HTTP error to the Client
+ * @param client_sd Client Socket Descriptor
+**/
+void _BadRequestException(int client_sd)
+{
+    send_response(
+        client_sd,
+        "HTTP/1.1 400 Not Found",
+        get_mime_type(""),
+        NULL,
+        0
+    );   
+}
+
+
 /**
  * @brief Returns a `404 Not Found` HTTP error to the Client
  * @param client_sd Client Socket Descriptor
@@ -336,6 +349,21 @@ void _NotFoundException(int client_sd)
     );   
 }
 
+
+/**
+ * @brief Returns a `405 Method Not Allowed` HTTP error to the Client
+ * @param client_sd Client Socket Descriptor
+**/
+void _MethodNotAllowed(int client_sd)
+{
+    send_response(
+        client_sd,
+        "HTTP/1.1 405 Method Not Allowed",
+        get_mime_type(""),
+        NULL,
+        0
+    );
+}
 
 /**
  * @brief Returns a `500 Internal Server Error` HTTP error to the Client
