@@ -7,8 +7,13 @@
 #include "httpserve.h"
 
 #include <time.h>
+#include <ctype.h>
 #include <sys/stat.h>
 
+
+#define WITHOUT_SERVER_PORT   (1)
+#define WITH_SERVER_PORT      (2)
+#define SERVER_PORT_ARG_INDEX (1)
 
 #define HTTP_METHOD_LENGTH  (10)
 #define URI_PATH_LENGTH     (2048)
@@ -35,12 +40,42 @@ void _InternalServerErrorException(int client_sd);
 
 
 void logger(const char *log_level, const char *message);
+int is_port_number(char *input);
 
 
 int main(int argc, char *argv[])
 {
+    if (
+        argc != WITH_SERVER_PORT    &&
+        argc != WITHOUT_SERVER_PORT
+    )
+    {
+        logger(FATAL, "Usage: httpserve [optional SERVER_PORT]");
+        exit(1);
+    }
+    
+    int server_port;
+
+    if ( argc == WITH_SERVER_PORT )
+    {
+        if ( !is_port_number(argv[SERVER_PORT_ARG_INDEX]) )
+        {
+            logger(FATAL, "Server Port is not an Integer...");
+            logger(FATAL, "Usage: httpserve [optional SERVER_PORT]");
+            exit(1);
+        }
+
+        server_port = atoi(argv[SERVER_PORT_ARG_INDEX]);
+    }
+
+    if ( argc == WITHOUT_SERVER_PORT )
+    {
+        server_port = SERVER_PORT;
+    }
+
     // TODO: Parse command line arguments to override default port if necessary
-    start_server(SERVER_PORT);
+    start_server(server_port);
+
     return 0;
 }
 
@@ -462,4 +497,23 @@ void logger(const char *log_level, const char *message)
         "%s | [%s]: %s\n",
         stime, log_level, message
     );
+}
+
+
+/**
+ * @brief Checks if passed string is a Port Number or Not
+ *
+ * @param input string to be checked
+**/
+int is_port_number(char *input)
+{
+    for (unsigned int i = 0; input[i] != '\0'; ++i)
+    {
+        if ( !isdigit(input[i]) )
+        {
+            return 0;
+        }
+    }
+
+    return 1;
 }
