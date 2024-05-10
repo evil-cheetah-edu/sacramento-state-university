@@ -199,11 +199,15 @@ void handle_get_request(int client_sock, const char* path)
 
     if ( !file )
     {
-        const char *response = 
-            "HTTP/1.1 404 Not Found\r\n"
-            "Content-Length: 0\r\n\r\n";
-
-        write(client_sock, response, strlen(response));
+        send_response(
+            client_sock,
+            "HTTP/1.1 404 Not Found"
+            "Content-Length: 0\r\n\r\n",
+            "text/plain",
+            NULL,
+            0
+        );
+        return;
     }
 
     /// Get filesize
@@ -213,25 +217,40 @@ void handle_get_request(int client_sock, const char* path)
 
     const char *content_type = get_mime_type(file_path);
     
-    snprintf(
-        response_header, sizeof(response_header),
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: %s\r\n"
-            "Content-Length: %lu\r\n"
-            "Connection: close\r\n\r\n",
-            content_type, (unsigned long)file_size
+    char *buffer = malloc(file_size);
+
+    if ( !buffer )
+    {
+        fprintf(stderr, "Memory allocation error...\n");
+        perror("malloc");
+        fclose(file);
+        return;
+    }
+
+    fread(buffer, 1, file_size, file);
+
+    printf(get_mime_type(file_path));
+    
+    send_response(
+        client_sock,
+        "HTTP/1.1 200 OK",
+        get_mime_type(file_path),
+        buffer,
+        file_size
     );
 
     write(client_sock, response_header, strlen(response_header));
 
-    char buffer[BUFFER_SIZE];
-    size_t size_read;
+    // Write using Buffer
+    // char buffer[BUFFER_SIZE];
+    // size_t size_read;
 
-    while ( (size_read = fread(buffer, 1, sizeof(buffer), file)) > 0 )
-    {
-        write(client_sock, buffer, size_read);
-    }
+    // while ( (size_read = fread(buffer, 1, sizeof(buffer), file)) > 0 )
+    // {
+    //     write(client_sock, buffer, size_read);
+    // }
 
+    free(buffer);
     fclose(file);
 }
 
