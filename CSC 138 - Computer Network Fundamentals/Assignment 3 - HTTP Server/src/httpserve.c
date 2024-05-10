@@ -58,10 +58,6 @@ void _InternalServerErrorException(int client_sd);
 void logger(const char *log_level, const char *message);
 void loggerf(const char *log_level, const char *format, ...);
 
-void start_ssl_server(int port);
-void handle_ssl_connections(int server_socket, SSL_CTX *context);
-void handle_ssl_session(SSL *ssl);
-
 
 int is_within_base_dir(const char *requested_path);
 int is_port_number(char *input);
@@ -100,8 +96,7 @@ int main(int argc, char *argv[])
         server_port = SERVER_PORT;
     }
 
-    /// HTTP: start_server(server_port);
-    start_ssl_server(server_port);
+    start_server(server_port);
 
     return 0;
 }
@@ -114,45 +109,6 @@ void start_server(int port)
     int socket = create_socket(port);
 
     handle_connections(socket);
-}
-
-
-/**
- * @brief Starts HTTPS Server 
-**/
-void start_ssl_server(int port)
-{
-    SSL_CTX *context;
-
-    SSL_library_init();
-    OpenSSL_add_all_algorithms();
-    SSL_load_error_strings();
-
-    context = SSL_CTX_new(TLS_server_method());
-
-    if ( !context )
-    {
-        logger(FATAL, "Unable to create TLS(SSL) Context...");
-        exit(1);
-    }
-
-    SSL_CTX_set_ecdh_auto(context, 1);
-
-    if (
-        SSL_CTX_use_certificate_file(context, "server.crt", SSL_FILETYPE_PEM) <= 0 ||
-        SSL_CTX_use_PrivateKey_file(context,  "server.key", SSL_FILETYPE_PEM) <= 0
-    )
-    {
-        logger(FATAL, "Failed to load Certificates...");
-        exit(1);
-    }
-
-    int server_socket = create_socket(port);
-    
-    handle_ssl_connections(server_socket, context);
-
-    SSL_CTX_free(context);
-    EVP_cleanup();
 }
 
 
@@ -251,47 +207,6 @@ void handle_connections(int server_sock)
 }
 
 
-void handle_ssl_connections(int server_sock, SSL_CTX *context)
-{
-    struct sockaddr_in client_address;
-    socklen_t address_length = sizeof(client_address);
-
-
-    while (1)
-    {
-        int client_sd = accept(
-            server_sock,
-            (struct sockaddr *)&client_address,
-            &address_length
-        );
-
-        if ( client_sd < 0 )
-        {
-            logger(ERROR, "Failed to accept connection from client...");
-            perror("accept");
-            close(client_sd);
-            continue;
-        }
-
-        SSL *ssl = SSL_new(context);
-        SSL_set_fd(ssl, client_sd);
-
-        if ( SSL_accept(ssl) <= 0 )
-        {
-            logger(ERROR, "An error occurred during handshake...");
-            SSL_free(ssl);
-            close(client_sd);
-            continue;
-        }
-
-        handle_ssl_session(ssl);
-        SSL_shutdown(ssl);
-        SSL_free(ssl);
-        close(client_sd);
-    }
-}
-
-
 void process_request(int client_sock)
 {
     char request[BUFFER_SIZE];
@@ -368,24 +283,6 @@ void process_request(int client_sock)
 }
 
 
-void handle_ssl_session(SSL *ssl)
-{
-    char *request[BUFFER_SIZE];
-
-    int byte_size = SSL_read(ssl, request, sizeof(request));
-
-    if ( byte_size > 0 )
-    {
-        request[byte_size] = '\0';
-        loggerf(INFO, "Received: %s", request);
-        SSL_write(ssl, request, byte_size);
-        return;
-    }
-
-    logger(FATAL, "Received nothing...");
-}
-
-
 void handle_get_request(int client_sock, const char* path)
 {
     char file_path[PATH_MAX];
@@ -454,58 +351,6 @@ void handle_get_request(int client_sock, const char* path)
     loggerf(INFO, "Status: %d | Served File: %s", 200, file_path);
     
     free(buffer);
-    fclose(file);
-}
-
-
-/// TODO: Refactor HEAD and GET
-void handle_head_request(int client_sock, const char* path)
-{
-    char file_path[PATH_MAX];
-
-    if ( strcmp(path, "/") == 0 )
-    {
-        logger(DEBUG, "Method: HEAD | Mapping '/' to '/index.html'");
-        path = "/index.html";
-    }
-
-    char response_header[1024];
-
-    // Resolve the absolute path and check for directory traversal
-    if ( !is_within_base_dir(path) )
-    {
-        loggerf(
-            ERROR,
-            "Method: HEAD | Not Found or Directory Traversal | "
-            "Attempt: %s",
-            path
-        );
-
-        _ForbiddenException(client_sock);
-        return;
-    }
-
-    snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT_PATH, path);
-
-    FILE *file = fopen(file_path, "rb");
-
-    if ( !file )
-    {
-        loggerf(WARN, "Method: HEAD | File Not Found: %s", path);
-        _NotFoundException(client_sock);
-        return;
-    }
-    
-    send_response(
-        client_sock,
-        "HTTP/1.1 200 OK",
-        get_mime_type(file_path),
-        NULL,
-        0
-    );
-
-    loggerf(INFO, "Status: %d | HEAD Request for File: %s", 200, file_path);
-    
     fclose(file);
 }
 
@@ -604,37 +449,13 @@ void send_response(int client_sock, const char *header, const char *content_type
         header, content_type, body_length
     );
 
-    write(client_sock, response, strlen(response));
+    // write(client_sock, response, strlen(response));
 
     if (body != NULL && body_length > 0)
     {
         write(client_sock, body, body_length);
     }
 }
-
-
-void send_ssl_response(SSL *ssl, const char *header, const char *content_type, const char *body, int body_length)
-{
-    char response[BUFFER_SIZE];
-    
-    snprintf(
-        response, sizeof(response),
-        "%s\r\n"
-        "Content-Type: %s\r\n"
-        "Content-Length: %d\r\n\r\n",
-        header, content_type, body_length
-    );
-
-    // Send headers
-    SSL_write(ssl, response, strlen(response));
-
-    // Send body if it exists
-    if (body != NULL && body_length > 0)
-    {
-        SSL_write(ssl, body, body_length);
-    }
-}
-
 
 /**
  * @brief Returns MIME Type for based on File Extension
