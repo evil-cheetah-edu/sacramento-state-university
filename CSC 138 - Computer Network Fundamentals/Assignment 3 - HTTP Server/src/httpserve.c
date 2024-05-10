@@ -6,16 +6,25 @@
 #include <netinet/in.h>
 #include "httpserve.h"
 
+#include <time.h>
 #include <sys/stat.h>
 
 
-#define HTTP_METHOD_LENGTH    (10)
+#define HTTP_METHOD_LENGTH  (10)
 #define URI_PATH_LENGTH     (2048)
-#define HTTP_VERSION_LENGTH   (10)
+#define HTTP_VERSION_LENGTH (10)
 
 #define WEB_ROOT_PATH       ("./www")
 
-#define BACKLOG_CONNECTIONS   (10)
+#define BACKLOG_CONNECTIONS (10)
+
+#define LOGGER_STREAM      (stdout)
+
+#define DEBUG               ("\033[95m DEBUG \033[0m")
+#define INFO                ("\033[94m INFO \033[0m")
+#define WARN                ("\033[33m WARN \033[0m")
+#define ERROR               ("\033[91m ERROR \033[0m")
+#define FATAL               ("\033[31m FATAL \033[0m")
 
 
 void _BadRequestException(int client_sd);
@@ -23,6 +32,9 @@ void _NotFoundException(int client_sd);
 void _MethodNotAllowedException(int client_sd);
 void _UnsupportedMediaTypeException(int client_sd);
 void _InternalServerErrorException(int client_sd);
+
+
+void logger(const char *log_level, const char *message);
 
 
 int main(int argc, char *argv[])
@@ -53,7 +65,7 @@ int create_socket(int port)
     
     if (socket_fd < 0)
     {
-        fprintf(stderr, "Failed creating a socket...\n");
+        logger(FATAL, "Failed creating a socket...");
         perror("socket");
         exit(1);
     }
@@ -68,7 +80,7 @@ int create_socket(int port)
         ) < 0
     )
     {
-        fprintf(stderr, "Failed setting socket options...\n");
+        logger(FATAL, "Failed setting socket options...");
         perror("setsockopt");
         exit(1);
     }
@@ -89,7 +101,7 @@ int create_socket(int port)
         ) < 0
     )
     {
-        fprintf(stderr, "Failed to Bind...\n");
+        logger(FATAL, "Failed to Bind...");
         perror("bind");
         close(socket_fd);
         exit(1);
@@ -99,11 +111,13 @@ int create_socket(int port)
         listen(socket_fd, BACKLOG_CONNECTIONS) < 0
     )
     {
-        fprintf(stderr, "Failed to start listening on a Socket...\n");
+        logger(FATAL, "Failed to start listening on a Socket...");
         perror("listen");
         close(socket_fd);
         exit(1);
     }
+
+    logger(INFO, "Application is listening...");
 
     return socket_fd;
 }
@@ -125,7 +139,7 @@ void handle_connections(int server_sock)
 
         if ( client_sd < 0 )
         {
-            fprintf(stderr, "Failed to accept request from client...\n");
+            logger(ERROR, "Failed to accept request from client...");
             perror("accept");
             close(client_sd);
             continue;
@@ -148,15 +162,13 @@ void process_request(int client_sock)
 
     if ( read_size < 0 )
     {
-        fprintf(stderr, "Failed to read the client request...\n");
+        logger(ERROR, "Failed to read the client request...");
         perror("read");
 
         _InternalServerErrorException(client_sock);
 
         return;
     }
-
-    request[BUFFER_SIZE] = '\0';
 
     char method[HTTP_METHOD_LENGTH],
          path[URI_PATH_LENGTH],
@@ -166,18 +178,13 @@ void process_request(int client_sock)
         sscanf(request, "%s %s %s", method, path, version) != 3
     ) 
     {
-        fprintf(stderr, "Failed to parse request\n");
+        logger(WARN, "Failed to parse request");
         perror("sscanf");
 
         _BadRequestException(client_sock);
 
         return;
     }
-    
-    /// TODO: Remove Debug Info
-    printf("Method:  `%s`\n", method);
-    printf("URI:     `%s`\n", path);
-    printf("VERSION: `%s`\n", version);
 
     if ( strcmp(method, "GET") == 0 )
     {
@@ -199,6 +206,7 @@ void handle_get_request(int client_sock, const char* path)
 {
     if ( strcmp(path, "/") == 0 )
     {
+        logger(DEBUG, "Mapping `/` to index.html");
         path = "/index.html";
     }
 
@@ -209,12 +217,13 @@ void handle_get_request(int client_sock, const char* path)
 
     /// TODO: Remove Debug Information
     /// TODO: Sanitize Path
-    printf("   Path: %s\n", file_path);
 
     FILE *file = fopen(file_path, "rb");
 
     if ( !file )
     {
+        logger(WARN, "File Not Found: ");
+        logger(WARN, path);
         _NotFoundException(client_sock);
         return;
     }
@@ -223,8 +232,6 @@ void handle_get_request(int client_sock, const char* path)
     fseek(file, 0, SEEK_END);
     int file_size = ftell(file);
     fseek(file, 0, SEEK_SET);
-
-    const char *content_type = get_mime_type(file_path);
     
     char *buffer = malloc(file_size);
 
@@ -424,5 +431,35 @@ void _InternalServerErrorException(int client_sd)
         get_mime_type(""),
         NULL,
         0
+    );
+}
+
+
+/**
+ * @brief Logs information out in the Standardized format
+ * 
+ * For more information, see:
+ * @see {@link https://devhints.io/datetime}
+ *
+ * @param log_level Log Level, aka Severity 
+ * @param message Logging message
+**/
+void logger(const char *log_level, const char *message)
+{
+    char stime[BUFFER_SIZE];
+
+    time_t now           = time(NULL);
+    struct tm *time_info = localtime(&now);
+
+    strftime(
+        stime, sizeof(stime),
+        "%A, %b %d %Y @ %H:%M:%S%Z",
+        time_info
+    );
+
+    fprintf(
+        LOGGER_STREAM,
+        "%s | [%s]: %s\n",
+        stime, log_level, message
     );
 }
