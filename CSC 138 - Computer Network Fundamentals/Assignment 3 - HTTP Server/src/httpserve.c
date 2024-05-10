@@ -6,10 +6,14 @@
 #include <netinet/in.h>
 #include "httpserve.h"
 
+#include <sys/stat.h>
+
 
 #define HTTP_METHOD_LENGTH    (10)
 #define URI_PATH_LENGTH     (2048)
 #define HTTP_VERSION_LENGTH   (10)
+
+#define WEB_ROOT_PATH       ("./www")
 
 
 int main(int argc, char *argv[]) {
@@ -148,24 +152,27 @@ void process_request(int client_sock)
          path[URI_PATH_LENGTH],
          version[HTTP_VERSION_LENGTH];
 
-    
-    sscanf(request, "%s %s %s", method, path, version);
+    if (
+        sscanf(request, "%s %s %s", method, path, version) != 3
+    ) 
+    {
+        fprintf(stderr, "Failed to parse request\n");
+        return;
+    }
     
     /// TODO: Remove Debug Info
-    printf("Method:  %s\n", method);
-    printf("URI:     %s\n", path);
-    printf("VERSION: %s\n", version);
+    printf("Method:  `%s`\n", method);
+    printf("URI:     `%s`\n", path);
+    printf("VERSION: `%s`\n", version);
 
     if ( strcmp(method, "GET") == 0 )
     {
         handle_get_request(client_sock, path);
     }
-
     else if ( strcmp(method, "POST") == 0 )
     {
         handle_post_request(client_sock, path);
     }
-
     else
     {
         const char *response =
@@ -177,7 +184,24 @@ void process_request(int client_sock)
 }
 
 
-void handle_get_request(int client_sock, const char* path) {
+void handle_get_request(int client_sock, const char* path)
+{
+    char file_path[256];
+    char response_header[1024];
+
+    struct stat file_stat;
+
+    snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT_PATH, path);
+
+    /// TODO: Remove Debug Information
+    printf("   Path: %s\n", file_path);
+
+    FILE *file = fopen(file_path, "rb");
+
+    if ( file == NULL )
+    {
+        printf("File does not exist");
+    }
     // TODO: Handle GET request:
     // 1. Map the path to a file.
     // 2. Check if the file exists.
