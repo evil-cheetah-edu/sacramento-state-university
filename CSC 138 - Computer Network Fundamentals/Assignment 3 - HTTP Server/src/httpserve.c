@@ -15,8 +15,15 @@
 
 #define WEB_ROOT_PATH       ("./www")
 
+#define BACKLOG_CONNECTIONS   (10)
 
-int main(int argc, char *argv[]) {
+
+void _InternalServerErrorException(int client_sd);
+void _NotFoundException(int client_sd);
+
+
+int main(int argc, char *argv[])
+{
     // TODO: Parse command line arguments to override default port if necessary
     start_server(SERVER_PORT);
     return 0;
@@ -85,11 +92,8 @@ int create_socket(int port)
         exit(1);
     }
 
-    /// TODO: Pull from Environment Variable
-    int backlog_connections = 10;
-
     if (
-        listen(socket_fd, backlog_connections) < 0
+        listen(socket_fd, BACKLOG_CONNECTIONS) < 0
     )
     {
         fprintf(stderr, "Failed to start listening on a Socket...\n");
@@ -143,6 +147,9 @@ void process_request(int client_sock)
     {
         fprintf(stderr, "Failed to read the client request...\n");
         perror("read");
+
+        _InternalServerErrorException(client_sock);
+
         return;
     }
 
@@ -157,6 +164,10 @@ void process_request(int client_sock)
     ) 
     {
         fprintf(stderr, "Failed to parse request\n");
+        perror("sscanf");
+
+        _InternalServerErrorException(client_sock);
+
         return;
     }
     
@@ -168,19 +179,22 @@ void process_request(int client_sock)
     if ( strcmp(method, "GET") == 0 )
     {
         handle_get_request(client_sock, path);
+        return;
     }
-    else if ( strcmp(method, "POST") == 0 )
+    
+    if ( strcmp(method, "POST") == 0 )
     {
         handle_post_request(client_sock, path);
+        return;
     }
-    else
-    {
-        const char *response =
-            "HTTP/1.1 405 Method Not Allowed\r\n"
-            "Content-Length: 0\r\n\r\n";
-
-        write(client_sock, response, strlen(response));
-    }
+    
+    send_response(
+        client_sock,
+        "HTTP/1.1 405 Method Not Allowed",
+        get_mime_type(""),
+        NULL,
+        0
+    );
 }
 
 
@@ -199,14 +213,7 @@ void handle_get_request(int client_sock, const char* path)
 
     if ( !file )
     {
-        send_response(
-            client_sock,
-            "HTTP/1.1 404 Not Found"
-            "Content-Length: 0\r\n\r\n",
-            "text/plain",
-            NULL,
-            0
-        );
+        _NotFoundException(client_sock);
         return;
     }
 
@@ -224,12 +231,18 @@ void handle_get_request(int client_sock, const char* path)
         fprintf(stderr, "Memory allocation error...\n");
         perror("malloc");
         fclose(file);
+
+        _InternalServerErrorException(client_sock);
+        
         return;
     }
 
+    /// TODO: Refactor by sending via Buffer
+    /// Potential Issue: memory allocation error, when trying to
+    /// serve large files or many users
+    /// Current Limitations: function signatures that lie
+    /// in specifications in `httpserve.h`
     fread(buffer, 1, file_size, file);
-
-    printf(get_mime_type(file_path));
     
     send_response(
         client_sock,
@@ -240,16 +253,7 @@ void handle_get_request(int client_sock, const char* path)
     );
 
     write(client_sock, response_header, strlen(response_header));
-
-    // Write using Buffer
-    // char buffer[BUFFER_SIZE];
-    // size_t size_read;
-
-    // while ( (size_read = fread(buffer, 1, sizeof(buffer), file)) > 0 )
-    // {
-    //     write(client_sock, buffer, size_read);
-    // }
-
+    
     free(buffer);
     fclose(file);
 }
@@ -286,6 +290,10 @@ void send_response(int client_sock, const char *header, const char *content_type
 }
 
 
+/**
+ * @brief Returns MIME Type for based on File Extension
+ * @param filename Filename or Path to a file
+**/
 const char* get_mime_type(const char *filename)
 {
     if ( strstr(filename, ".html") )
@@ -310,4 +318,36 @@ const char* get_mime_type(const char *filename)
         return "image/gif";
     
     return "text/plain";
+}
+
+
+/**
+ * @brief Returns a `404 Not Found` HTTP error to the Client
+ * @param client_sd Client Socket Descriptor
+**/
+void _NotFoundException(int client_sd)
+{
+    send_response(
+        client_sd,
+        "HTTP/1.1 404 Not Found",
+        get_mime_type(""),
+        NULL,
+        0
+    );   
+}
+
+
+/**
+ * @brief Returns a `500 Internal Server Error` HTTP error to the Client
+ * @param client_sd Client Socket Descriptor
+**/
+void _InternalServerErrorException(int client_sd)
+{
+    send_response(
+        client_sd,
+        "HTTP/1.1 500 Internal Server Error",
+        get_mime_type(""),
+        NULL,
+        0
+    );
 }
