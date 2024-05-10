@@ -22,14 +22,19 @@
 #define HTTP_VERSION_LENGTH (10)
 
 #define WEB_ROOT_PATH       ("./www")
+#define CGI_ROOT_PATH       ("./cgi-bin")
 
 #define BACKLOG_CONNECTIONS (10)
+#define ENVIRONMENT_BUFFER  (64)
 
 #define LOGGER_STREAM       (stdout)
 #define LOG_BUFFER_SIZE     (1024)
 
 #define HEADER_END          ("\r\n\r\n")
 #define CONTENT_LENGTH      ("Content-Length:")
+
+#define CHILD   (0)
+#define PARENT  (1)
 
 /// TODO: Rework into Enums
 #define DEBUG               ("\033[95m DEBUG \033[0m")
@@ -38,7 +43,7 @@
 #define ERROR               ("\033[91m ERROR \033[0m")
 #define FATAL               ("\033[31m FATAL \033[0m")
 
-
+void _RedirectToIndex(int client_sd);
 void _BadRequestException(int client_sd);
 void _ForbiddenException(int client_sd);
 void _NotFoundException(int client_sd);
@@ -260,7 +265,9 @@ void process_request(int client_sock)
     if ( strcmp(method, "POST") == 0 )
     {
         char *body = extract_body(request, read_size, headers, client_sock);
-        
+
+        loggerf(DEBUG, "Processing: %s Method", method);
+
         handle_post_request(client_sock, path, headers, body);
 
         free(headers);
@@ -401,7 +408,82 @@ void handle_head_request(int client_sock, const char* path)
 
 void handle_post_request(int client_sock, const char *path, char* headers, char* body)
 {
-    loggerf(DEBUG, "Method: %s | Payload: `%s`", "POST", body);
+    path = "./cgi-bin/testcgi";
+
+    char content_length[ENVIRONMENT_BUFFER];
+    sprintf(content_length, "CONTENT_LENGTH=%ld", strlen(body));
+
+    putenv("REQUEST_METHOD=POST");
+    putenv(content_length);
+
+    loggerf(DEBUG, "Method: POST | Path: `%s`", path);
+
+    /// TODO: Validate and Sanitize the Path
+    if ( access(path, X_OK) == -1 )
+    {
+        loggerf(WARN, "Method: POST | File Not Found: %s", path);
+        _NotFoundException(client_sock);
+    }
+
+    int pipe_stdin[2],
+        pipe_stdout[2];
+
+    pipe(pipe_stdin);
+    pipe(pipe_stdout);
+
+    pid_t pid = fork();
+
+    if ( pid == CHILD )
+    {
+        dup2(pipe_stdin[CHILD], STDIN_FILENO);
+        
+        close(pipe_stdin[PARENT]);
+        close(pipe_stdin[CHILD]); // Not used anymore
+
+        dup2(pipe_stdout[PARENT], STDOUT_FILENO);
+
+        close(pipe_stdout[CHILD]);
+        close(pipe_stdout[PARENT]); // Not used anymore
+
+        char script_path[PATH_MAX];
+        sprintf(script_path, "%s", path);
+
+        execl(script_path, script_path, (char *)NULL);
+
+        _InternalServerErrorException(client_sock);
+        loggerf(FATAL, "Error while running CGI Script: %s", path);
+        exit(1);
+    }
+
+    else if ( pid > CHILD )
+    {
+        close(pipe_stdin[CHILD]);
+        close(pipe_stdout[PARENT]);
+
+        write(pipe_stdin[PARENT], body, strlen(body));
+        close(pipe_stdout[PARENT]);
+
+        char *response[BUFFER_SIZE];
+        int byte_size;
+
+        while ( (byte_size = read(pipe_stdout[CHILD], response, sizeof(response) - 1)) > 0 )
+        {
+            send(client_sock, response, byte_size, 0);
+        }
+
+        close(pipe_stdout[CHILD]);
+
+        wait(NULL);
+
+        _RedirectToIndex(client_sock);
+    }
+
+    else
+    {
+        _InternalServerErrorException(client_sock);
+        logger(FATAL, "Failed creating a fork...");
+        exit(1);
+    }
 }
 
 
@@ -458,6 +540,26 @@ const char* get_mime_type(const char *filename)
     return "text/plain";
 }
 
+
+/**
+ * @brief Redirects User to `/index.html`
+ * 
+ * For more information, see:
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/302}
+ *
+ * @param client_sd Client Socket Descriptor
+**/
+void _RedirectToIndex(int client_sd)
+{
+    send_response(
+        client_sd,
+        "HTTP/1.1 302 Found\r\n"
+        "Location: /index.html\r\n\r\n",
+        get_mime_type(""),
+        NULL,
+        0
+    );   
+}
 
 
 /**
@@ -619,7 +721,7 @@ void logger(const char *log_level, const char *message)
  *
  * @param log_level Log Level, aka Severity 
  * @param format F-String(Formatted String)
- * @param args Arguments that have to be placed in the F-Stringååå
+ * @param args Arguments that have to be placed in the F-String
 **/
 void loggerf(const char *log_level, const char *format, ...)
 {
