@@ -1,1 +1,6 @@
+# Compiled Files
 httpserve
+
+# Certificates and Keys
+server.crt
+server.key
