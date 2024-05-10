@@ -254,7 +254,8 @@ void handle_get_request(int client_sock, const char* path)
 
     if ( strcmp(path, "/") == 0 )
     {
-        logger(DEBUG, "Mapping '/' to '/index.html'");
+        /// TODO: Rework Logger to Log Method Name
+        logger(DEBUG, "Method: GET | Mapping '/' to '/index.html'");
         path = "/index.html";
     }
 
@@ -288,7 +289,7 @@ void handle_get_request(int client_sock, const char* path)
 
     if ( !buffer )
     {
-        logger(FATAL, "Memory allocation error...");
+        logger(FATAL, "Method: GET | Memory allocation error...");
         perror("malloc");
         fclose(file);
 
@@ -319,8 +320,55 @@ void handle_get_request(int client_sock, const char* path)
 }
 
 
-void handle_head_request(int client_sock, const char* path) {
-    // TODO: Handle HEAD request similarly to GET but without sending the file content.
+/// TODO: Refactor HEAD and GET
+void handle_head_request(int client_sock, const char* path)
+{
+    char file_path[PATH_MAX];
+
+    if ( strcmp(path, "/") == 0 )
+    {
+        logger(DEBUG, "Method: HEAD | Mapping '/' to '/index.html'");
+        path = "/index.html";
+    }
+
+    char response_header[1024];
+
+    // Resolve the absolute path and check for directory traversal
+    if ( !is_within_base_dir(path) )
+    {
+        loggerf(
+            ERROR,
+            "Method: HEAD | Not Found or Directory Traversal | "
+            "Attempt: %s",
+            path
+        );
+
+        _ForbiddenException(client_sock);
+        return;
+    }
+
+    snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT_PATH, path);
+
+    FILE *file = fopen(file_path, "rb");
+
+    if ( !file )
+    {
+        loggerf(WARN, "Method: HEAD | File Not Found: %s", path);
+        _NotFoundException(client_sock);
+        return;
+    }
+    
+    send_response(
+        client_sock,
+        "HTTP/1.1 200 OK",
+        get_mime_type(file_path),
+        NULL,
+        0
+    );
+
+    loggerf(INFO, "Status: %d | HEAD Request for File: %s", 200, file_path);
+    
+    fclose(file);
 }
 
 
