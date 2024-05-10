@@ -248,9 +248,22 @@ void handle_post_request(int client_sock, const char* path) {
 }
 
 
-void send_response(int client_sock, const char *header, const char *content_type, const char *body, int body_length) {
-    // TODO: Compile and send a full HTTP response.
-    // Include the header, content type, body, and any other necessary HTTP headers.
+void send_response(int client_sock, const char *header, const char *content_type, const char *body, int body_length)
+{
+    char *response[BUFFER_SIZE];
+
+    snprintf(
+        response, sizeof(response),
+        "%s\r\n"
+        "Content-Type: %s\r\n"
+        "Content-Length: %d\r\n"
+        "Connection: close\r\n\r\n",
+        header, content_type, body_length
+    );
+
+    write(client_sock, response, strlen(response));
+
+    write(client_sock, body, body_length);
 }
 
 
