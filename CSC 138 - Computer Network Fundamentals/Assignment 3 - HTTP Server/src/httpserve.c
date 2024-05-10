@@ -197,6 +197,11 @@ void process_request(int client_sock)
 
 void handle_get_request(int client_sock, const char* path)
 {
+    if ( strcmp(path, "/") == 0 )
+    {
+        path = "/index.html";
+    }
+
     char file_path[256];
     char response_header[1024];
 
