@@ -7,6 +7,11 @@
 #include "httpserve.h"
 
 
+#define HTTP_METHOD_LENGTH    (10)
+#define URI_PATH_LENGTH     (2048)
+#define HTTP_VERSION_LENGTH   (10)
+
+
 int main(int argc, char *argv[]) {
     // TODO: Parse command line arguments to override default port if necessary
     start_server(SERVER_PORT);
@@ -14,9 +19,12 @@ int main(int argc, char *argv[]) {
 }
 
 
-void start_server(int port) {
+void start_server(int port)
+{
     // TODO: Implement server initialization:
     // 1. Create a socket.
+    int socket = create_socket(port);
+    handle_connections(socket);
     // 2. Bind the socket to a port.
     // 3. Listen on the socket.
     // 4. Enter a loop to accept and handle connections.
@@ -106,7 +114,7 @@ void handle_connections(int server_sock)
 
         if ( client_sd < 0 )
         {
-            fprintf(stderr, "Failed accept request from client...\n");
+            fprintf(stderr, "Failed to accept request from client...\n");
             perror("accept");
             close(client_sd);
             continue;
@@ -119,11 +127,53 @@ void handle_connections(int server_sock)
 }
 
 
-void process_request(int client_sock) {
-    // TODO: Implement request processing:
-    // 1. Read the request from the client.
-    // 2. Parse the HTTP method, path, and protocol version.
-    // 3. Depending on the method, call handle_get_request, handle_head_request, or handle_post_request.
+void process_request(int client_sock)
+{
+    char request[BUFFER_SIZE];
+
+    memset(request, 0, sizeof(request));
+
+    int read_size = read(client_sock, request, sizeof(request) - 1);
+
+    if ( read_size < 0 )
+    {
+        fprintf(stderr, "Failed to read the client request...\n");
+        perror("read");
+        return;
+    }
+
+    request[BUFFER_SIZE] = '\0';
+
+    char method[HTTP_METHOD_LENGTH],
+         path[URI_PATH_LENGTH],
+         version[HTTP_VERSION_LENGTH];
+
+    
+    sscanf(request, "%s %s %s", method, path, version);
+    
+    /// TODO: Remove Debug Info
+    printf("Method:  %s\n", method);
+    printf("URI:     %s\n", path);
+    printf("VERSION: %s\n", version);
+
+    if ( strcmp(method, "GET") == 0 )
+    {
+        handle_get_request(client_sock, path);
+    }
+
+    else if ( strcmp(method, "POST") == 0 )
+    {
+        handle_post_request(client_sock, path);
+    }
+
+    else
+    {
+        const char *response =
+            "HTTP/1.1 405 Method Not Allowed\r\n"
+            "Content-Length: 0\r\n\r\n";
+
+        write(client_sock, response, strlen(response));
+    }
 }
 
 
