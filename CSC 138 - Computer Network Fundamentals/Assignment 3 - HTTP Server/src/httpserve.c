@@ -372,7 +372,8 @@ void handle_head_request(int client_sock, const char* path)
 }
 
 
-void handle_post_request(int client_sock, const char* path) {
+void handle_post_request(int client_sock, const char *path, char* headers, char* body)
+{
     // TODO: Handle POST request:
     // 1. If the path is to a CGI script, execute the script and send the output as the response.
     // 2. If not, send a 404 Not Found response.

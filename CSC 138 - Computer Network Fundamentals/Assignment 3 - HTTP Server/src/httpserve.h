@@ -37,7 +37,7 @@ void handle_head_request(int client_sock, const char* path);
 
 
 // Handle POST requests
-void handle_post_request(int client_sock, const char* path);
+void handle_post_request(int client_sock, const char *path, char* headers, char* body);
 
 
 // Send an HTTP response to the client
