@@ -19,8 +19,9 @@
 
 
 void _BadRequestException(int client_sd);
-void _MethodNotAllowed(int client_sd);
 void _NotFoundException(int client_sd);
+void _MethodNotAllowedException(int client_sd);
+void _UnsupportedMediaTypeException(int client_sd);
 void _InternalServerErrorException(int client_sd);
 
 
@@ -190,7 +191,7 @@ void process_request(int client_sock)
         return;
     }
     
-    _MethodNotAllowed(client_sock);
+    _MethodNotAllowedException(client_sock);
 }
 
 
@@ -288,6 +289,10 @@ void send_response(int client_sock, const char *header, const char *content_type
 
 /**
  * @brief Returns MIME Type for based on File Extension
+ * 
+ * For more information, see:
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types}
+ * 
  * @param filename Filename or Path to a file
 **/
 const char* get_mime_type(const char *filename)
@@ -320,6 +325,10 @@ const char* get_mime_type(const char *filename)
 
 /**
  * @brief Returns a `400 Bad Request` HTTP error to the Client
+ * 
+ * For more information, see:
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400}
+ *
  * @param client_sd Client Socket Descriptor
 **/
 void _BadRequestException(int client_sd)
@@ -336,6 +345,10 @@ void _BadRequestException(int client_sd)
 
 /**
  * @brief Returns a `404 Not Found` HTTP error to the Client
+ * 
+ * For more information, see:
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404}
+ * 
  * @param client_sd Client Socket Descriptor
 **/
 void _NotFoundException(int client_sd)
@@ -352,9 +365,13 @@ void _NotFoundException(int client_sd)
 
 /**
  * @brief Returns a `405 Method Not Allowed` HTTP error to the Client
+ * 
+ * For more information, see:
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/405}
+ * 
  * @param client_sd Client Socket Descriptor
 **/
-void _MethodNotAllowed(int client_sd)
+void _MethodNotAllowedException(int client_sd)
 {
     send_response(
         client_sd,
@@ -365,8 +382,33 @@ void _MethodNotAllowed(int client_sd)
     );
 }
 
+
+/**
+ * @brief Returns a `415 Unsupported Media Type` HTTP error to the Client.
+ * 
+ * For more information, see:
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/415}
+ * 
+ * @param client_sd Client Socket Descriptor
+**/
+void _UnsupportedMediaTypeException(int client_sd)
+{
+    send_response(
+        client_sd,
+        "HTTP/1.1 405 Method Not Allowed",
+        get_mime_type(""),
+        NULL,
+        0
+    );
+}
+
+
 /**
  * @brief Returns a `500 Internal Server Error` HTTP error to the Client
+ * 
+ * For more information, see:
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500}
+ *
  * @param client_sd Client Socket Descriptor
 **/
 void _InternalServerErrorException(int client_sd)
