@@ -1,6 +1,7 @@
 # Compiler settings - Can change to clang or others
 CC = gcc
 CFLAGS = -Wall
+LDLIBS = -lssl -lcrypto
 
 # Target executable name
 TARGET = httpserve
@@ -9,7 +10,7 @@ SOURCE = src/httpserve
 
 # Build target
 $(TARGET): $(SOURCE).c testcgi
-	@$(CC) $(CFLAGS) -o $(TARGET) $(SOURCE).c
+	@$(CC) $(CFLAGS) $(SOURCE).c -o $(TARGET) $(LDLIBS)
 
 
 # Run Executable
@@ -29,7 +30,7 @@ openssl: generate_rsa
 		-sha256         \
 		-key server.key \
 		-out server.crt \
-		-days 365
+		-days 1
 
 # RSA Key Generation
 generate_rsa:
