@@ -189,23 +189,75 @@ void handle_get_request(int client_sock, const char* path)
     char file_path[256];
     char response_header[1024];
 
-    struct stat file_stat;
-
     snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT_PATH, path);
 
     /// TODO: Remove Debug Information
+    /// TODO: Sanitize Path
     printf("   Path: %s\n", file_path);
 
     FILE *file = fopen(file_path, "rb");
 
-    if ( file == NULL )
+    if ( !file )
     {
-        printf("File does not exist");
+        const char *response = 
+            "HTTP/1.1 404 Not Found\r\n"
+            "Content-Length: 0\r\n\r\n";
+
+        write(client_sock, response, strlen(response));
     }
-    // TODO: Handle GET request:
-    // 1. Map the path to a file.
-    // 2. Check if the file exists.
-    // 3. Read the file and send it with an appropriate response header.
+
+    /// Get filesize
+    fseek(file, 0, SEEK_END);
+    int file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    const char *content_type;
+
+    if ( strstr(file_path, ".html") )
+        content_type = "text/html";
+
+    else if ( strstr(file_path, ".css") )
+        content_type = "text/css";
+
+    else if ( strstr(file_path, ".js") )
+        content_type = "application/javascript";
+
+    else if ( strstr(file_path, ".png") )
+        content_type = "image/png";
+
+    else if ( strstr(file_path, ".jpg") )
+        content_type = "image/jpg";
+
+    else if ( strstr(file_path, ".jpeg") )
+        content_type = "image/jpeg";
+
+    else if ( strstr(file_path, ".gif") )
+        content_type = "image/gif";
+    
+    else
+        content_type = "text/plain";
+
+    
+    snprintf(
+        response_header, sizeof(response_header),
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: %s\r\n"
+            "Content-Length: %lu\r\n"
+            "Connection: close\r\n\r\n",
+            content_type, (unsigned long)file_size
+    );
+
+    write(client_sock, response_header, strlen(response_header));
+
+    char buffer[BUFFER_SIZE];
+    size_t size_read;
+
+    while ( (size_read = fread(buffer, 1, sizeof(buffer), file)) > 0 )
+    {
+        write(client_sock, buffer, size_read);
+    }
+
+    fclose(file);
 }
 
 
