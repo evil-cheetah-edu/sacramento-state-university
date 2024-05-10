@@ -1,5 +1,6 @@
 # Compiled Files
 httpserve
+cgi-bin/testcgi
 
 # Certificates and Keys
 server.crt
