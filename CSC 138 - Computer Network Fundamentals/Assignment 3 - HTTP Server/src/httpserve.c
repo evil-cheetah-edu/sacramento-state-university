@@ -8,6 +8,7 @@
 
 #include <time.h>
 #include <ctype.h>
+#include <stdarg.h>
 #include <sys/stat.h>
 
 
@@ -23,8 +24,10 @@
 
 #define BACKLOG_CONNECTIONS (10)
 
-#define LOGGER_STREAM      (stdout)
+#define LOGGER_STREAM       (stdout)
+#define LOG_BUFFER_SIZE     (1024)
 
+/// TODO: Rework into Enums
 #define DEBUG               ("\033[95m DEBUG \033[0m")
 #define INFO                ("\033[94m INFO \033[0m")
 #define WARN                ("\033[33m WARN \033[0m")
@@ -40,6 +43,7 @@ void _InternalServerErrorException(int client_sd);
 
 
 void logger(const char *log_level, const char *message);
+void loggerf(const char *log_level, const char *format, ...);
 int is_port_number(char *input);
 
 
@@ -152,7 +156,7 @@ int create_socket(int port)
         exit(1);
     }
 
-    logger(INFO, "Application is listening...");
+    loggerf(INFO, "Application is listening on port ':%d'...", port);
 
     return socket_fd;
 }
@@ -195,12 +199,14 @@ void process_request(int client_sock)
 
     int read_size = read(client_sock, request, sizeof(request) - 1);
 
+    request[read_size] = '\0';
+
     if ( read_size < 0 )
     {
         logger(ERROR, "Failed to read the client request...");
         perror("read");
 
-        _InternalServerErrorException(client_sock);
+        _BadRequestException(client_sock);
 
         return;
     }
@@ -213,7 +219,7 @@ void process_request(int client_sock)
         sscanf(request, "%s %s %s", method, path, version) != 3
     ) 
     {
-        logger(WARN, "Failed to parse request");
+        loggerf(WARN, "Failed to parse request | Payload: %s", request);
         perror("sscanf");
 
         _BadRequestException(client_sock);
@@ -232,8 +238,10 @@ void process_request(int client_sock)
         handle_post_request(client_sock, path);
         return;
     }
-    
+
     _MethodNotAllowedException(client_sock);
+
+    loggerf(INFO, "Method: %s | Payload: %s", method, request);
 }
 
 
@@ -257,8 +265,7 @@ void handle_get_request(int client_sock, const char* path)
 
     if ( !file )
     {
-        logger(WARN, "File Not Found: ");
-        logger(WARN, path);
+        loggerf(WARN, "File Not Found: %s", path);
         _NotFoundException(client_sock);
         return;
     }
@@ -272,7 +279,7 @@ void handle_get_request(int client_sock, const char* path)
 
     if ( !buffer )
     {
-        fprintf(stderr, "Memory allocation error...\n");
+        logger(FATAL, "Memory allocation error...");
         perror("malloc");
         fclose(file);
 
@@ -296,7 +303,7 @@ void handle_get_request(int client_sock, const char* path)
         file_size
     );
 
-    write(client_sock, response_header, strlen(response_header));
+    loggerf(INFO, "Status: %d | Served File: %s", 200, file_path);
     
     free(buffer);
     fclose(file);
@@ -481,7 +488,7 @@ void _InternalServerErrorException(int client_sd)
 **/
 void logger(const char *log_level, const char *message)
 {
-    char stime[BUFFER_SIZE];
+    char stime[LOG_BUFFER_SIZE];
 
     time_t now           = time(NULL);
     struct tm *time_info = localtime(&now);
@@ -497,6 +504,32 @@ void logger(const char *log_level, const char *message)
         "%s | [%s]: %s\n",
         stime, log_level, message
     );
+}
+
+
+
+/**
+ * @brief Logs formatted message out in the Standardized format
+ * 
+ * For more information, see:
+ * @see {@link https://devhints.io/datetime}
+ *
+ * @param log_level Log Level, aka Severity 
+ * @param format F-String(Formatted String)
+ * @param args Arguments that have to be placed in the F-Stringååå
+**/
+void loggerf(const char *log_level, const char *format, ...)
+{
+    char message[LOG_BUFFER_SIZE];
+
+    va_list args;
+    va_start(args, format);
+
+    vsnprintf(message, sizeof(message), format, args);
+
+    va_end(args);
+
+    logger(log_level, message);
 }
 
 
