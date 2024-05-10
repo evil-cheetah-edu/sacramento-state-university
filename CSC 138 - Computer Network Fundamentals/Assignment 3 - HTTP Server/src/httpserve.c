@@ -211,32 +211,7 @@ void handle_get_request(int client_sock, const char* path)
     int file_size = ftell(file);
     fseek(file, 0, SEEK_SET);
 
-    const char *content_type;
-
-    if ( strstr(file_path, ".html") )
-        content_type = "text/html";
-
-    else if ( strstr(file_path, ".css") )
-        content_type = "text/css";
-
-    else if ( strstr(file_path, ".js") )
-        content_type = "application/javascript";
-
-    else if ( strstr(file_path, ".png") )
-        content_type = "image/png";
-
-    else if ( strstr(file_path, ".jpg") )
-        content_type = "image/jpg";
-
-    else if ( strstr(file_path, ".jpeg") )
-        content_type = "image/jpeg";
-
-    else if ( strstr(file_path, ".gif") )
-        content_type = "image/gif";
-    
-    else
-        content_type = "text/plain";
-
+    const char *content_type = get_mime_type(file_path);
     
     snprintf(
         response_header, sizeof(response_header),
@@ -279,6 +254,28 @@ void send_response(int client_sock, const char *header, const char *content_type
 }
 
 
-const char* get_mime_type(const char *filename) {
-    // TODO: Return the MIME type based on the file extension.
+const char* get_mime_type(const char *filename)
+{
+    if ( strstr(filename, ".html") )
+        return "text/html";
+
+    if ( strstr(filename, ".css") )
+        return "text/css";
+
+    if ( strstr(filename, ".js") )
+        return "application/javascript";
+
+    if ( strstr(filename, ".png") )
+        return "image/png";
+
+    if ( strstr(filename, ".jpg") )
+        return "image/jpg";
+
+    if ( strstr(filename, ".jpeg") )
+        return "image/jpeg";
+
+    if ( strstr(filename, ".gif") )
+        return "image/gif";
+    
+    return "text/plain";
 }
