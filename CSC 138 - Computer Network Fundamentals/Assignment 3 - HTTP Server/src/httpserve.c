@@ -606,7 +606,33 @@ void send_response(int client_sock, const char *header, const char *content_type
 
     write(client_sock, response, strlen(response));
 
-    write(client_sock, body, body_length);
+    if (body != NULL && body_length > 0)
+    {
+        write(client_sock, body, body_length);
+    }
+}
+
+
+void send_ssl_response(SSL *ssl, const char *header, const char *content_type, const char *body, int body_length)
+{
+    char response[BUFFER_SIZE];
+    
+    snprintf(
+        response, sizeof(response),
+        "%s\r\n"
+        "Content-Type: %s\r\n"
+        "Content-Length: %d\r\n\r\n",
+        header, content_type, body_length
+    );
+
+    // Send headers
+    SSL_write(ssl, response, strlen(response));
+
+    // Send body if it exists
+    if (body != NULL && body_length > 0)
+    {
+        SSL_write(ssl, body, body_length);
+    }
 }
 
 
