@@ -8,6 +8,7 @@
 
 #include <time.h>
 #include <ctype.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <sys/stat.h>
 
@@ -36,6 +37,7 @@
 
 
 void _BadRequestException(int client_sd);
+void _ForbiddenException(int client_sd);
 void _NotFoundException(int client_sd);
 void _MethodNotAllowedException(int client_sd);
 void _UnsupportedMediaTypeException(int client_sd);
@@ -44,6 +46,7 @@ void _InternalServerErrorException(int client_sd);
 
 void logger(const char *log_level, const char *message);
 void loggerf(const char *log_level, const char *format, ...);
+int is_within_base_dir(const char *requested_path);
 int is_port_number(char *input);
 
 
@@ -247,19 +250,25 @@ void process_request(int client_sock)
 
 void handle_get_request(int client_sock, const char* path)
 {
+    char file_path[PATH_MAX];
+
     if ( strcmp(path, "/") == 0 )
     {
-        logger(DEBUG, "Mapping `/` to index.html");
+        logger(DEBUG, "Mapping '/' to '/index.html'");
         path = "/index.html";
     }
 
-    char file_path[256];
     char response_header[1024];
 
-    snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT_PATH, path);
+    // Resolve the absolute path and check for directory traversal
+    if ( !is_within_base_dir(path) )
+    {
+        loggerf(ERROR, "Not Found or Directory Traversal | Attempt: %s", path);
+        _ForbiddenException(client_sock);
+        return;
+    }
 
-    /// TODO: Remove Debug Information
-    /// TODO: Sanitize Path
+    snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT_PATH, path);
 
     FILE *file = fopen(file_path, "rb");
 
@@ -418,6 +427,26 @@ void _NotFoundException(int client_sd)
 
 
 /**
+ * @brief Returns a `403 Forbidden` HTTP error to the Client
+ * 
+ * For more information, see:
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403}
+ * 
+ * @param client_sd Client Socket Descriptor
+**/
+void _ForbiddenException(int client_sd)
+{
+    send_response(
+        client_sd,
+        "HTTP/1.1 403 Forbidden",
+        get_mime_type(""),
+        NULL,
+        0
+    );   
+}
+
+
+/**
  * @brief Returns a `405 Method Not Allowed` HTTP error to the Client
  * 
  * For more information, see:
@@ -530,6 +559,42 @@ void loggerf(const char *log_level, const char *format, ...)
     va_end(args);
 
     logger(log_level, message);
+}
+
+/**
+ * @brief Directory Sanitization Check
+ * 
+ * Checks Requested Path for Traversal Attack Vulnerability
+ * 
+ * @param requested_path Path to be Validated
+**/
+int is_within_base_dir(const char *requested_path)
+{
+    char resolved_base[PATH_MAX];
+    char resolved_path[PATH_MAX];
+
+    /// Check If WebRoot Exists
+    if ( realpath(WEB_ROOT_PATH, resolved_base) == NULL )
+    {
+        loggerf(ERROR, "Failed resolving WebRoot('%s')", WEB_ROOT_PATH);
+        perror("realpath (base_dir)");
+        return -1;
+    }
+
+    /// Combine 'WebRoot/RequestedPath`
+    char full_path[PASS_MAX];
+    snprintf(full_path, sizeof(full_path), "%s%s", WEB_ROOT_PATH, requested_path);
+
+    // Resolve Path to Avoid Traversal Attack
+    if ( realpath(full_path, resolved_path) == NULL )
+    {
+        loggerf(ERROR, "Failed resolving File Full('%s')", full_path);
+        perror("realpath (full_path)");
+        return -2;
+    }
+
+    /// Check if `ResolvedPath` Starts with `WebRoot`
+    return strncmp(resolved_base, resolved_path, strlen(resolved_base)) == 0;
 }
 
 
