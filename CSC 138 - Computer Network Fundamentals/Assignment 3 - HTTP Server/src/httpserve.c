@@ -168,7 +168,7 @@ void process_request(int client_sock)
         fprintf(stderr, "Failed to parse request\n");
         perror("sscanf");
 
-        _InternalServerErrorException(client_sock);
+        _BadRequestException(client_sock);
 
         return;
     }
