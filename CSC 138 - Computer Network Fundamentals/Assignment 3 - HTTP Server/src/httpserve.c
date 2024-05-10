@@ -28,6 +28,9 @@
 #define LOGGER_STREAM       (stdout)
 #define LOG_BUFFER_SIZE     (1024)
 
+#define HEADER_END          ("\r\n\r\n")
+#define CONTENT_LENGTH      ("Content-Length:")
+
 /// TODO: Rework into Enums
 #define DEBUG               ("\033[95m DEBUG \033[0m")
 #define INFO                ("\033[94m INFO \033[0m")
@@ -46,8 +49,12 @@ void _InternalServerErrorException(int client_sd);
 
 void logger(const char *log_level, const char *message);
 void loggerf(const char *log_level, const char *format, ...);
+
 int is_within_base_dir(const char *requested_path);
 int is_port_number(char *input);
+
+char *extract_headers(const char *request);
+char *extract_body(const char *request, int read_size, const char *headers, int client_sd);
 
 
 int main(int argc, char *argv[])
@@ -200,11 +207,9 @@ void process_request(int client_sock)
 
     memset(request, 0, sizeof(request));
 
-    int read_size = read(client_sock, request, sizeof(request) - 1);
+    int read_size = recv(client_sock, request, sizeof(request) - 1, 0);
 
-    request[read_size] = '\0';
-
-    if ( read_size < 0 )
+    if ( read_size <= 0 )
     {
         logger(ERROR, "Failed to read the client request...");
         perror("read");
@@ -214,12 +219,16 @@ void process_request(int client_sock)
         return;
     }
 
-    char method[HTTP_METHOD_LENGTH],
-         path[URI_PATH_LENGTH],
-         version[HTTP_VERSION_LENGTH];
+    request[read_size] = '\0';
+
+    char *headers = extract_headers(request);
+
+    char method[HTTP_METHOD_LENGTH]   = { 0 },
+         path[URI_PATH_LENGTH]        = { 0 },
+         version[HTTP_VERSION_LENGTH] = { 0 };
 
     if (
-        sscanf(request, "%s %s %s", method, path, version) != 3
+        sscanf(headers, "%s %s %s", method, path, version) != 3
     ) 
     {
         loggerf(WARN, "Failed to parse request | Payload: %s", request);
@@ -233,12 +242,30 @@ void process_request(int client_sock)
     if ( strcmp(method, "GET") == 0 )
     {
         handle_get_request(client_sock, path);
+
+        free(headers);
+
+        return;
+    }
+
+    if ( strcmp(method, "HEAD") == 0 )
+    {
+        handle_head_request(client_sock, path);
+
+        free(headers);
+
         return;
     }
     
     if ( strcmp(method, "POST") == 0 )
     {
-        handle_post_request(client_sock, path);
+        char *body = extract_body(request, read_size, headers, client_sock);
+        
+        handle_post_request(client_sock, path, headers, body);
+
+        free(headers);
+        free(body);
+
         return;
     }
 
@@ -374,9 +401,7 @@ void handle_head_request(int client_sock, const char* path)
 
 void handle_post_request(int client_sock, const char *path, char* headers, char* body)
 {
-    // TODO: Handle POST request:
-    // 1. If the path is to a CGI script, execute the script and send the output as the response.
-    // 2. If not, send a 404 Not Found response.
+    loggerf(DEBUG, "Method: %s | Payload: `%s`", "POST", body);
 }
 
 
@@ -663,4 +688,104 @@ int is_port_number(char *input)
     }
 
     return 1;
+}
+
+
+char *extract_headers(const char *request)
+{
+    char* header_end = strstr(request, HEADER_END);
+
+    /// Invalid or Incomplete Headers
+    if (header_end == NULL)
+    {
+        return NULL;
+    }
+
+    int header_length = header_end - request + strlen(HEADER_END);
+
+    char* headers = malloc(header_length + 1);
+
+    /// Memory Allocation Failure
+    if (headers == NULL)
+    {
+        return NULL;
+    }
+
+    strncpy(headers, request, header_length);
+
+    headers[header_length] = '\0';
+
+    return headers;
+}
+
+
+char *extract_body(const char *request, int read_size, const char *headers, int client_sd)
+{
+    const char *payload_size = strstr(headers, CONTENT_LENGTH);
+
+    /// No Content Length in the Header
+    if ( payload_size == NULL )
+    {
+        return NULL;
+    }
+
+    int content_length = atoi(payload_size + strlen(CONTENT_LENGTH));
+
+    char *header_end = strstr(request, HEADER_END);
+
+    /// Invalid Request or Header not Complete
+    if ( header_end == NULL )
+    {
+        return NULL;
+    }
+
+    char *body_start = header_end + strlen(HEADER_END);
+    int body_received = read_size - (body_start - request);
+
+    if ( body_received >= content_length )
+    {
+        char* body = malloc(content_length + 1);
+
+        if ( body == NULL )
+        {
+            return NULL;
+        }
+
+        memcpy(body, body_start, content_length);
+
+        body[content_length] = '\0';
+
+        return body;
+    }
+    
+    char *body = malloc(content_length + 1);
+
+    if ( body == NULL )
+    {
+        return NULL;
+    }
+
+    memcpy(body, body_start, body_received);
+
+    int total_read      = body_received;
+    int remaining_bytes = content_length - body_received;
+
+    while (total_read < content_length)
+    {
+        int bytes_read = recv(client_sd, body + total_read, remaining_bytes, 0);
+
+        if ( bytes_read <= 0 )
+        {
+            free(body);
+
+            return NULL;
+        }
+
+        total_read      += bytes_read;
+        remaining_bytes -= bytes_read;
+    }
+
+    body[content_length] = '\0';
+
+    return body;
 }
