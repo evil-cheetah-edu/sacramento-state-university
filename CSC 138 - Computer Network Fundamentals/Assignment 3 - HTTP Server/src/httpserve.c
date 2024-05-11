@@ -12,9 +12,6 @@
 #include <stdarg.h>
 #include <sys/stat.h>
 
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-
 
 #define WITHOUT_SERVER_PORT   (1)
 #define WITH_SERVER_PORT      (2)
@@ -294,8 +291,6 @@ void handle_get_request(int client_sock, const char* path)
         path = "/index.html";
     }
 
-    char response_header[1024];
-
     // Resolve the absolute path and check for directory traversal
     if ( !is_within_base_dir(path) )
     {
@@ -340,6 +335,8 @@ void handle_get_request(int client_sock, const char* path)
     /// in specifications in `httpserve.h`
     fread(buffer, 1, file_size, file);
     
+    logger(DEBUG, "Sending Response");
+
     send_response(
         client_sock,
         "HTTP/1.1 200 OK",
@@ -348,9 +345,62 @@ void handle_get_request(int client_sock, const char* path)
         file_size
     );
 
+
     loggerf(INFO, "Status: %d | Served File: %s", 200, file_path);
     
     free(buffer);
+    fclose(file);
+}
+
+
+/// TODO: Refactor HEAD and GET
+void handle_head_request(int client_sock, const char* path)
+{
+    char file_path[PATH_MAX];
+
+    if ( strcmp(path, "/") == 0 )
+    {
+        logger(DEBUG, "Method: HEAD | Mapping '/' to '/index.html'");
+        path = "/index.html";
+    }
+
+    char response_header[1024];
+
+    // Resolve the absolute path and check for directory traversal
+    if ( !is_within_base_dir(path) )
+    {
+        loggerf(
+            ERROR,
+            "Method: HEAD | Not Found or Directory Traversal | "
+            "Attempt: %s",
+            path
+        );
+
+        _ForbiddenException(client_sock);
+        return;
+    }
+
+    snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT_PATH, path);
+
+    FILE *file = fopen(file_path, "rb");
+
+    if ( !file )
+    {
+        loggerf(WARN, "Method: HEAD | File Not Found: %s", path);
+        _NotFoundException(client_sock);
+        return;
+    }
+    
+    send_response(
+        client_sock,
+        "HTTP/1.1 200 OK",
+        get_mime_type(file_path),
+        NULL,
+        0
+    );
+
+    loggerf(INFO, "Status: %d | HEAD Request for File: %s", 200, file_path);
+    
     fclose(file);
 }
 
@@ -449,7 +499,7 @@ void send_response(int client_sock, const char *header, const char *content_type
         header, content_type, body_length
     );
 
-    // write(client_sock, response, strlen(response));
+    write(client_sock, response, strlen(response));
 
     if (body != NULL && body_length > 0)
     {
@@ -525,7 +575,7 @@ void _BadRequestException(int client_sd)
 {
     send_response(
         client_sd,
-        "HTTP/1.1 400 Not Found",
+        "HTTP/1.1 400 Bad Request",
         get_mime_type(""),
         NULL,
         0
