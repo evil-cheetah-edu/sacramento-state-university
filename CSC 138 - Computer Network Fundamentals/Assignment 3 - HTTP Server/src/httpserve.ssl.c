@@ -346,8 +346,6 @@ void handle_ssl_get_request(SSL *ssl, const char* path)
         path = "/index.html";
     }
 
-    char response_header[1024];
-
     // Resolve the absolute path and check for directory traversal
     if ( !is_within_base_dir(path) )
     {
@@ -714,6 +712,7 @@ void logger(const char *log_level, const char *message)
         "%s | [%s]: %s\n",
         stime, log_level, message
     );
+    fflush(stdout);
 }
 
 
