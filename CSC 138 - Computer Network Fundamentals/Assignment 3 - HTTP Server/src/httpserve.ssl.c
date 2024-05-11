@@ -405,6 +405,55 @@ void handle_ssl_get_request(SSL *ssl, const char* path)
 }
 
 
+void handle_head_request(SSL *ssl, const char* path)
+{
+    char file_path[PATH_MAX];
+
+    if ( strcmp(path, "/") == 0 )
+    {
+        logger(DEBUG, "Method: HEAD | Mapping '/' to '/index.html'");
+        path = "/index.html";
+    }
+
+    // Resolve the absolute path and check for directory traversal
+    if ( !is_within_base_dir(path) )
+    {
+        loggerf(
+            ERROR,
+            "Method: HEAD | Not Found or Directory Traversal | "
+            "Attempt: %s",
+            path
+        );
+
+        _ForbiddenException(ssl);
+        return;
+    }
+
+    snprintf(file_path, sizeof(file_path), "%s%s", WEB_ROOT_PATH, path);
+
+    FILE *file = fopen(file_path, "rb");
+
+    if ( !file )
+    {
+        loggerf(WARN, "Method: HEAD | File Not Found: %s", path);
+        _NotFoundException(ssl);
+        return;
+    }
+    
+    send_ssl_response(
+        ssl,
+        "HTTP/1.1 200 OK",
+        get_mime_type(file_path),
+        NULL,
+        0
+    );
+
+    loggerf(INFO, "Status: %d | HEAD Request for File: %s", 200, file_path);
+    
+    fclose(file);
+}
+
+
 // void handle_ssl_post_request(SSL *ssl, const char *path, char* headers, char* body)
 // {
 //     path = "./cgi-bin/testcgi";
