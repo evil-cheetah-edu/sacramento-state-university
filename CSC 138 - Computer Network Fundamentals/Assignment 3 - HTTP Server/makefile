@@ -17,6 +17,14 @@ ssl: $(SOURCE).ssl.c testcgi
 	@$(CC) $(CFLAGS) $(SOURCE).ssl.c -o $(TARGET) $(LDLIBS)
 
 
+# Build and Run the Image
+docker:
+	@docker build --tag "httpserve" . \
+		&& 							  \
+     docker run -d -e PORT=8080	 	  \
+				-p 8080:8080		  \
+				"httpserve"
+
 # Run Executable
 run:
 	@./$(TARGET)
