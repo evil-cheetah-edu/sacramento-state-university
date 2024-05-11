@@ -67,7 +67,7 @@ void handle_ssl_connections(int server_socket, SSL_CTX *context);
 void handle_ssl_request(SSL *ssl);
 void send_ssl_response(SSL *ssl, const char *header, const char *content_type, const char *body, int body_length);
 void handle_ssl_get_request(SSL *ssl, const char* path);
-// void handle_ssl_head_request(SSL *ssl, const char* path);
+void handle_ssl_head_request(SSL *ssl, const char* path);
 // void handle_ssl_post_request(SSL *ssl, const char *path, char* headers, char* body)
 
 
@@ -312,7 +312,7 @@ void handle_ssl_request(SSL *ssl)
     {
         loggerf(DEBUG, "Processing Method: %s", method);
 
-        handle_ssl_get_request(ssl, path);
+        handle_ssl_head_request(ssl, path);
 
         free(headers);
 
@@ -405,7 +405,7 @@ void handle_ssl_get_request(SSL *ssl, const char* path)
 }
 
 
-void handle_head_request(SSL *ssl, const char* path)
+void handle_ssl_head_request(SSL *ssl, const char* path)
 {
     char file_path[PATH_MAX];
 
