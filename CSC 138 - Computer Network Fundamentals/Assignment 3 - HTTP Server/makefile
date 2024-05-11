@@ -8,9 +8,13 @@ TARGET = httpserve
 SOURCE = src/httpserve
 
 
-# Build target
-$(TARGET): $(SOURCE).c testcgi
-	@$(CC) $(CFLAGS) $(SOURCE).c -o $(TARGET) $(LDLIBS)
+# Build Base Version (HTTP)
+base: $(SOURCE).c testcgi
+	@$(CC) $(CFLAGS) $(SOURCE).c -o $(TARGET)
+
+# Build SSL Version (HTTPS)
+ssl: $(SOURCE).ssl.c testcgi
+	@$(CC) $(CFLAGS) $(SOURCE).ssl.c -o $(TARGET) $(LDLIBS)
 
 
 # Run Executable
