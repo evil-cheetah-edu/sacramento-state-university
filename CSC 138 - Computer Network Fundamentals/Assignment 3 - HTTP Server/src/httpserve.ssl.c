@@ -68,14 +68,14 @@ void handle_ssl_request(SSL *ssl);
 void send_ssl_response(SSL *ssl, const char *header, const char *content_type, const char *body, int body_length);
 void handle_ssl_get_request(SSL *ssl, const char* path);
 void handle_ssl_head_request(SSL *ssl, const char* path);
-// void handle_ssl_post_request(SSL *ssl, const char *path, char* headers, char* body)
+void handle_ssl_post_request(SSL *ssl, const char *path, char* headers, char* body);
 
 
 int is_within_base_dir(const char *requested_path);
 int is_port_number(char *input);
 
 char *extract_headers(const char *request);
-char *extract_body(const char *request, int read_size, const char *headers, int client_sd);
+char *extract_body(const char *request, int read_size, const char *headers, SSL *ssl);
 
 
 int main(int argc, char *argv[])
@@ -321,7 +321,9 @@ void handle_ssl_request(SSL *ssl)
 
     if ( strcmp(method, "POST") == 0 )
     {
-        loggerf(DEBUG, "Processing Method: %s", method);
+        char *body = extract_body(request, byte_size, headers, ssl);
+
+        handle_ssl_post_request(ssl, path, headers, body);
 
         _BadRequestException(ssl);
 
@@ -454,85 +456,85 @@ void handle_ssl_head_request(SSL *ssl, const char* path)
 }
 
 
-// void handle_ssl_post_request(SSL *ssl, const char *path, char* headers, char* body)
-// {
-//     path = "./cgi-bin/testcgi";
+void handle_ssl_post_request(SSL *ssl, const char *path, char* headers, char* body)
+{
+    path = "./cgi-bin/testcgi";
 
-//     char content_length[ENVIRONMENT_BUFFER];
-//     sprintf(content_length, "CONTENT_LENGTH=%ld", strlen(body));
+    char content_length[ENVIRONMENT_BUFFER];
+    sprintf(content_length, "CONTENT_LENGTH=%ld", strlen(body));
 
-//     putenv("REQUEST_METHOD=POST");
-//     putenv(content_length);
+    putenv("REQUEST_METHOD=POST");
+    putenv(content_length);
 
-//     loggerf(DEBUG, "Method: POST | Path: `%s`", path);
+    loggerf(DEBUG, "Method: POST | Path: `%s`", path);
 
-//     /// TODO: Validate and Sanitize the Path
-//     if ( access(path, X_OK) == -1 )
-//     {
-//         loggerf(WARN, "Method: POST | File Not Found: %s", path);
-//         _NotFoundException(client_sock);
-//     }
+    /// TODO: Validate and Sanitize the Path
+    if ( access(path, X_OK) == -1 )
+    {
+        loggerf(WARN, "Method: POST | File Not Found: %s", path);
+        _NotFoundException(ssl);
+    }
 
-//     int pipe_stdin[2],
-//         pipe_stdout[2];
+    int pipe_stdin[2],
+        pipe_stdout[2];
 
-//     pipe(pipe_stdin);
-//     pipe(pipe_stdout);
+    pipe(pipe_stdin);
+    pipe(pipe_stdout);
 
-//     pid_t pid = fork();
+    pid_t pid = fork();
 
-//     if ( pid == CHILD )
-//     {
-//         dup2(pipe_stdin[CHILD], STDIN_FILENO);
+    if ( pid == CHILD )
+    {
+        dup2(pipe_stdin[CHILD], STDIN_FILENO);
         
-//         close(pipe_stdin[PARENT]);
-//         close(pipe_stdin[CHILD]); // Not used anymore
+        close(pipe_stdin[PARENT]);
+        close(pipe_stdin[CHILD]); // Not used anymore
 
-//         dup2(pipe_stdout[PARENT], STDOUT_FILENO);
+        dup2(pipe_stdout[PARENT], STDOUT_FILENO);
 
-//         close(pipe_stdout[CHILD]);
-//         close(pipe_stdout[PARENT]); // Not used anymore
+        close(pipe_stdout[CHILD]);
+        close(pipe_stdout[PARENT]); // Not used anymore
 
-//         char script_path[PATH_MAX];
-//         sprintf(script_path, "%s", path);
+        char script_path[PATH_MAX];
+        sprintf(script_path, "%s", path);
 
-//         execl(script_path, script_path, (char *)NULL);
+        execl(script_path, script_path, (char *)NULL);
 
-//         _InternalServerErrorException(ssl);
-//         loggerf(FATAL, "Error while running CGI Script: %s", path);
-//         exit(1);
-//     }
+        _InternalServerErrorException(ssl);
+        loggerf(FATAL, "Error while running CGI Script: %s", path);
+        exit(1);
+    }
 
-//     else if ( pid > CHILD )
-//     {
-//         close(pipe_stdin[CHILD]);
-//         close(pipe_stdout[PARENT]);
+    else if ( pid > CHILD )
+    {
+        close(pipe_stdin[CHILD]);
+        close(pipe_stdout[PARENT]);
 
-//         write(pipe_stdin[PARENT], body, strlen(body));
-//         close(pipe_stdout[PARENT]);
+        write(pipe_stdin[PARENT], body, strlen(body));
+        close(pipe_stdout[PARENT]);
 
-//         char *response[BUFFER_SIZE];
-//         int byte_size;
+        char *response[BUFFER_SIZE];
+        int byte_size;
 
-//         while ( (byte_size = read(pipe_stdout[CHILD], response, sizeof(response) - 1)) > 0 )
-//         {
-//             send(client_sock, response, byte_size, 0);
-//         }
+        while ( (byte_size = read(pipe_stdout[CHILD], response, sizeof(response) - 1)) > 0 )
+        {
+            send(ssl, response, byte_size, 0);
+        }
 
-//         close(pipe_stdout[CHILD]);
+        close(pipe_stdout[CHILD]);
 
-//         wait(NULL);
+        wait(NULL);
 
-//         _RedirectToIndex(client_sock);
-//     }
+        _RedirectToIndex(ssl);
+    }
 
-//     else
-//     {
-//         _InternalServerErrorException(client_sock);
-//         logger(FATAL, "Failed creating a fork...");
-//         exit(1);
-//     }
-// }
+    else
+    {
+        _InternalServerErrorException(ssl);
+        logger(FATAL, "Failed creating a fork...");
+        exit(1);
+    }
+}
 
 
 void send_ssl_response(SSL *ssl, const char *header, const char *content_type, const char *body, int body_length)
@@ -874,7 +876,7 @@ char *extract_headers(const char *request)
 }
 
 
-char *extract_body(const char *request, int read_size, const char *headers, int client_sd)
+char *extract_body(const char *request, int read_size, const char *headers, SSL *ssl)
 {
     const char *payload_size = strstr(headers, CONTENT_LENGTH);
 
@@ -927,7 +929,7 @@ char *extract_body(const char *request, int read_size, const char *headers, int 
 
     while (total_read < content_length)
     {
-        int bytes_read = recv(client_sd, body + total_read, remaining_bytes, 0);
+        int bytes_read = SSL_read(ssl, body + total_read, remaining_bytes);
 
         if ( bytes_read <= 0 )
         {
