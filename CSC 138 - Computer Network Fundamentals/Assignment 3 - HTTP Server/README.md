@@ -12,3 +12,7 @@ Basic HTTP web server in C that handles GET requests for various content types.
 `make`
 2. Run  
 `./httpserve`
+
+## Using [Docker](https://www.docker.com/)
+1. Run the command:  
+`make docker`
